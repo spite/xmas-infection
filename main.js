@@ -4,9 +4,85 @@ WAGNER.vertexShadersPath = 'Wagner/vertex-shaders';
 WAGNER.fragmentShadersPath = 'Wagner/fragment-shaders';
 WAGNER.assetsPath = 'Wagner/assets/';
 
+var nodeColors = {
+	'darkBlue':     { solid: 0x002768, wire: 0x0087ff },
+	'lightBlue':    { solid: 0x3681ff, wire: 0x00ffff },
+	'darkMagenta':  { solid: 0x750044, wire: 0xff0039 },
+	'lightMagenta': { solid: 0xc60054, wire: 0xff1ead },
+	'darkYellow':   { solid: 0xcc4e00, wire: 0xe97c10 },
+	'lightYellow':  { solid: 0xff9000, wire: 0xffff00 },
+	'darkRed':      { solid: 0x4e0000, wire: 0xa80000 },
+	'lightRed':     { solid: 0xab0000, wire: 0xff0000 }
+};
+
+var centerObjects = []
+
+function getParameterByName(name) {
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+
+var debugMode = getParameterByName( 'debug' ) === 'true';
+
+function addSpectrumVisualiser() {
+
+	spectrumCanvas = document.createElement( 'canvas' );
+	spectrumCanvas.width = 256;
+	spectrumCanvas.height = 64;
+	spectrumCanvas.setAttribute( 'id', 'spectrumCanvas' );
+	spectrumCtx = spectrumCanvas.getContext( '2d' );
+
+	document.body.appendChild( spectrumCanvas );
+
+}
+
+function getFreqRange( from, to ) {
+
+	var v = 0;
+	for( var j = from; j < to; j++ ) {
+		v += frequencyData[ j ];
+	}
+	return v / ( to - from );
+
+}
+
+function drawSpectrum( step ) {
+
+	spectrumCtx.clearRect( 0, 0, spectrumCanvas.width, spectrumCanvas.height );
+	for( var j = 0; j < frequencyData.length; j+= step ) {
+	var v = getFreqRange( j, j + step );// * Math.exp(.01*j);
+		spectrumCtx.fillStyle = 'rgb(255,' + j + ',' + j + ')';
+		spectrumCtx.beginPath();
+		spectrumCtx.fillRect( j, spectrumCanvas.height, step, - v * spectrumCanvas.height / 256 );
+		spectrumCtx.font = "normal 10px Arial";
+		spectrumCtx.save();
+		spectrumCtx.rotate( Math.PI / 2 );
+		spectrumCtx.beginPath();
+		spectrumCtx.fillText( j, 10, -j );
+		spectrumCtx.restore();
+	}
+
+}
+
+if( debugMode ) {
+
+	var spectrumCanvas;
+	var spectrumCtx;
+
+	addSpectrumVisualiser();
+
+}
+
 var timeLabel = document.getElementById( 'time' );
 var cameraLabel = document.getElementById( 'camera' );
 var container = document.getElementById( 'container' );
+
+if( debugMode ) {
+	timeLabel.style.display = 'block';
+	cameraLabel.style.display = 'block';
+}	
 
 var scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, .01, 100 );
@@ -15,25 +91,24 @@ camera.position.set( 0 ,0, -10 );//-1, 15, -10 );
 
 var renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true });
 renderer.setSize( window.innerWidth, window.innerHeight );
-renderer.setPixelRatio( window.devicePixelRatio );
+var pixelRatio = window.devicePixelRatio * .5;
+renderer.setPixelRatio( pixelRatio );
 container.appendChild( renderer.domElement );
 renderer.setClearColor( 0 );
 
 var composer = new WAGNER.Composer( renderer, { useRGBA: true } );
-var edgesComposer = new WAGNER.Composer( renderer, { useRGBA: true } );
-var edgesPass = new WAGNER.SobelEdgeDetectionPass();
 var bloomPass = new WAGNER.MultiPassBloomPass();
 bloomPass.params.blurAmount = 1;
+bloomPass.params.blendMode = 11;
 var DOFPass = new WAGNER.DOFPass();
 DOFPass.params.aperture = .01
 DOFPass.params.focalDistance = .9
 var blendPass = new WAGNER.BlendPass();
 blendPass.params.mode = 9
-var grayscalePass = new WAGNER.GrayscalePass();
+var glowTexture;
 
 var fxaaPass = new WAGNER.FXAAPass();
 
-var normalBuffer;
 var audio;
 
 var controls = new THREE.OrbitControls( camera, renderer.domElement );
@@ -43,9 +118,26 @@ renderer.shadowMap.type = THREE.PCFShadowMap;
 
 var shadowMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff, specular: 0xffffff, shininess: 0 });
 
+var matCap = THREE.ImageUtils.loadTexture( 'assets/matcap.png' ) ;
+
+var centerMaterial = new THREE.RawShaderMaterial( {
+	uniforms: {
+		matCapMap: { type: 't', value: matCap },
+		nodeColor: { type: 'c', value: new THREE.Color() },
+		wireColor: { type: 'c', value: new THREE.Color() },
+		nodeColorBright: { type: 'c', value: new THREE.Color() },
+		wireColorBright: { type: 'c', value: new THREE.Color() },
+		brightness: { type: 'f', value: 0 },
+		drawGlow: { type: 'f', value: 0 }
+	},
+	vertexShader: document.getElementById( 'center-vs' ).textContent,
+	fragmentShader: document.getElementById( 'center-fs' ).textContent,
+	derivatives: true
+} );
+
 var boxMaterial = new THREE.RawShaderMaterial( {
 	uniforms: {
-		matCapMap: { type: 't', value: THREE.ImageUtils.loadTexture( 'assets/matcap.png' ) },
+		matCapMap: { type: 't', value: matCap },
 		posTexture: { type: 't', value: null },
 		rotTexture: { type: 't', value: null },
 		orbitTexture: { type: 't', value: null },
@@ -55,9 +147,9 @@ var boxMaterial = new THREE.RawShaderMaterial( {
 		time: { type: 'f', value: 0 },
 		factor: { type: 'f', value: 0 },
 		total: { type: 'f', value: 0 },
-		drawMode: { type: 'f', value: 0 }, // 0 - color, 1 - normals, 2 - depth
 		mNear: { type: 'f', value: camera.near },
-		mFar: { type: 'f', value: camera.far }
+		mFar: { type: 'f', value: camera.far },
+		drawGlow: { type: 'f', value: 0 }
 	},
 	vertexShader: document.getElementById( 'object-vs' ).textContent,
 	fragmentShader: document.getElementById( 'object-fs' ).textContent
@@ -111,25 +203,52 @@ function loadBoxes() {
 
 function loadCenter() {
 
+	var vectors = [
+		new THREE.Vector3( 1, 0, 0 ),
+		new THREE.Vector3( 0, 1, 0 ),
+		new THREE.Vector3( 0, 0, 1 )
+	];
+
 	return new Promise( function( resolve, reject ) { 
 
-		var boxes = [ 'frame', 'dots', 'icosahedron', 'cristal' ];
+		var boxes = [ 'frame', 'dots', 'cristal' ];
+		var boxColors = [ 'Magenta', 'Blue', 'Yellow' ]
 		var promises = [];
 		var geometries = {};
 
-		boxes.forEach( function( b ) { 
+		boxes.forEach( function( b, id ) { 
 
 			var p = new Promise( function( resolve, reject ) {
 
 				var loader = new THREE.OBJLoader();
 				loader.load( 'assets/' + b + '.obj', function( res ) {
+					
 					var geometry = res.children[ 0 ].geometry;
 					geometry.computeBoundingBox();
 					var src = new THREE.BufferGeometry();
 					src.fromGeometry( geometry );
-					var mesh = new THREE.Mesh( src, new THREE.MeshNormalMaterial() );
+
+					var centers = new Float32Array( src.attributes.position.count * 3 );
+
+					for ( var i = 0, l = src.attributes.position.count; i < l; i ++ ) {
+						vectors[ i % 3 ].toArray( centers, i * 3 );
+					}
+
+					src.addAttribute( 'center', new THREE.BufferAttribute( centers, 3 ) );
+
+					var mat = centerMaterial.clone();
+					mat.uniforms.matCapMap.value = matCap;
+					mat.uniforms.nodeColor.value.setHex( nodeColors[ 'dark' + boxColors[ id ] ].solid );
+					mat.uniforms.wireColor.value.setHex( nodeColors[ 'dark' + boxColors[ id ] ].wire );
+					mat.uniforms.nodeColorBright.value.setHex( nodeColors[ 'light' + boxColors[ id ] ].solid );
+					mat.uniforms.wireColorBright.value.setHex( nodeColors[ 'light' + boxColors[ id ] ].wire );
+
+					var mesh = new THREE.Mesh( src, mat );
 					mesh.rotation.x = Math.PI / 4;
 					scene.add( mesh );
+
+					centerObjects.push( mesh );
+
 					resolve();
 				} );
 
@@ -246,6 +365,20 @@ function initGeometries() {
 	g.addAttribute( 'id', new THREE.BufferAttribute( ids, 1 ) );
 	g.attributes.id.needsUpdate = true;
 
+	var vectors = [
+		new THREE.Vector3( 1, 0, 0 ),
+		new THREE.Vector3( 0, 1, 0 ),
+		new THREE.Vector3( 0, 0, 1 )
+	];
+
+	var centers = new Float32Array( positionsLength );
+
+	for ( var i = 0, l = positionsLength / 3; i < l; i ++ ) {
+		vectors[ i % 3 ].toArray( centers, i * 3 );
+	}
+
+	g.addAttribute( 'center', new THREE.BufferAttribute( centers, 3 ) );
+
 	var w = Maf.nextPowerOfTwo( Math.sqrt( data.length ) );
 	var h = Maf.nextPowerOfTwo( data.length / w );
 
@@ -295,7 +428,7 @@ function initGeometries() {
 
 	var orbitPositions = [];
 
-	var r = 30;
+	var r = 16;
 	var a = 0;
 	cubePositions.forEach( function( v ) { 
 		var v = new THREE.Vector3() 
@@ -303,8 +436,11 @@ function initGeometries() {
 		v.y = .5 - Math.random()
 		v.z = r * Math.sin( a );
 		orbitPositions.push( v );
-		a += .05 + Math.random() * .05;
-		r += .01;
+		a += .5 * ( .05 + Math.random() * .05 );
+		if( a > TAU ) {
+			a -= TAU;
+			r += 1;
+		}
 	} );
 
 	orbitPositions.sort( function() { return Math.random() > .5 } );
@@ -388,8 +524,6 @@ function initGeometries() {
 	} );*/
 
 }
-
-var nodeColors = [ 0x460808, 0x006cdb, 0xcc07a2 ];
 
 function generateArm( base, bothAxis ){
 
@@ -545,6 +679,16 @@ window.addEventListener( 'keydown', function( e ) {
 
 } );
 
+var audioContext = new AudioContext();
+var audioBuffer;
+var audioSource;
+
+var analyser = audioContext.createAnalyser();
+analyser.fftSize = 512;
+analyser.smoothingTimeConstant = .75;
+var frequencyData = new Uint8Array( analyser.fftSize );
+analyser.connect( audioContext.destination );
+
 window.addEventListener( 'load', function() {
 
 	var geo = new Promise( function( resolve, reject ) { 
@@ -578,6 +722,7 @@ window.addEventListener( 'load', function() {
 	})
 
 	var a = new Promise( function( resolve, reject ) {
+		
 		audio = document.createElement( 'audio' );
 
 		audio.controls = true;
@@ -587,16 +732,53 @@ window.addEventListener( 'load', function() {
 		audio.style.bottom = '25px';
 		document.body.appendChild( audio );
 
-		audio.addEventListener( 'canplay', function() {
+		function onAudioReady() {
+
+			audio.removeEventListener( 'canplay', onAudioReady );
 			audio.pause();
+
+			var audioSource = audioContext.createMediaElementSource( audio );
+			audioSource.connect( analyser );
+
 			resolve();
-		} );
+
+		}
+
+		audio.addEventListener( 'canplay', onAudioReady );
 
 		audio.src = 'assets/acidbeat - xmas infection.mp3';
+
+		/*var request = new XMLHttpRequest();
+		request.open( 'GET', 'assets/acidbeat - xmas infection.mp3', true );
+		request.responseType = 'arraybuffer';
+
+		request.onload = function() {
+
+			audioContext.decodeAudioData( request.response, function( buffer ) {
+				
+				audioBuffer = buffer;
+
+				audioSource = audioContext.createBufferSource(); 
+				audioSource.buffer = audioBuffer;
+
+				audioSource.connect( analyser );
+
+				resolve();
+				//window.addEventListener( 'click', playSound );
+
+			}, function() {
+				reject();
+			} );
+
+		};
+
+		request.send();*/
+
 	} );
 
 	Promise.all( [ geo, a, story ] ).then( function() {
 		startTime = performance.now();
+		//audioSource.start( 0 );
 		audio.play();
 		render();
 	})
@@ -605,18 +787,21 @@ window.addEventListener( 'load', function() {
 
 function onWindowResize() {
 
-	var w = container.clientWidth;
-	var h = container.clientHeight;
+	var w = container.clientWidth * pixelRatio;
+	var h = container.clientHeight * pixelRatio;
 
 	camera.aspect = w / h;
 	camera.updateProjectionMatrix();
 
 	renderer.setSize( w, h );
 	composer.setSize( w, h );
-	edgesComposer.setSize( w,h );
 
-	normalBuffer = WAGNER.Pass.prototype.getOfflineTexture( edgesComposer.width, edgesComposer.height, false );
+	bloomPass.width = Maf.nextPowerOfTwo( w / 2 );
+	bloomPass.height = Maf.nextPowerOfTwo( h / 2 )
+	
+	glowTexture = WAGNER.Pass.prototype.getOfflineTexture( composer.width, composer.height, true );
 
+	renderer.domElement.style.width = renderer.domElement.style.height = '100%';
 }
 
 window.addEventListener( 'resize', onWindowResize );
@@ -627,14 +812,17 @@ var TAUV3 = new THREE.Vector3( TAU, TAU, TAU );
 
 function render() {
 
+	analyser.getByteFrequencyData( frequencyData );
+	if( debugMode ) {
+		drawSpectrum( 2 );
+	}
+
 	var t = audio.currentTime;
 	var l = 93;
 	requestAnimationFrame( render );
 
 	var et = 0;
 	if( t > 23 ) et = ( ( t - 23 ) / l );
-
-	time.textContent = t;
 
 	boxMaterial.uniforms.time.value = t;
 	boxMaterial.uniforms.factor.value = et;
@@ -647,28 +835,42 @@ function render() {
 		controls.update();		
 	}
 
-	cameraLabel.innerHTML = 'C x:' + camera.position.x + ' y:' + camera.position.y + ' z:' + camera.position.z + '<br/>T x:' + controls.target.x + ' y:' + controls.target.y + ' z:' + controls.target.z;
+	if( debugMode ) {
+		time.textContent = t;
+		cameraLabel.innerHTML = 'C x:' + camera.position.x + ' y:' + camera.position.y + ' z:' + camera.position.z + '<br/>T x:' + controls.target.x + ' y:' + controls.target.y + ' z:' + controls.target.z;
+	}
 
-	renderer.render( scene, camera );
+	scene.rotation.y = .1 * t;
 
-	//scene.rotation.y = -.5 * t;
+	//renderer.render( scene, camera );
 
-	/*composer.reset();
-	boxMaterial.uniforms.drawMode.value = 1;
-	composer.render( scene, camera, null, normalBuffer );
+	composer.reset();
+
+	var v = getFreqRange( 100, 102 ) / 255;
+	//Maf.scale( 0, 255, )
+	centerObjects.forEach( function( obj ) {
+		obj.material.uniforms.brightness.value = v;
+	})
+
+	boxMaterial.uniforms.drawGlow.value = 1;
+	centerObjects.forEach( function( obj ) {
+		obj.material.uniforms.drawGlow.value = 1;
+	})
+
+	composer.render( scene, camera, null, glowTexture );
+
+	boxMaterial.uniforms.drawGlow.value = 0;
+	centerObjects.forEach( function( obj ) {
+		obj.material.uniforms.drawGlow.value = 0;
+	})
 	
-	edgesComposer.reset();
-	edgesComposer.setSource( normalBuffer );
-	edgesComposer.pass( edgesPass );
-	edgesComposer.pass( grayscalePass );
-
-	boxMaterial.uniforms.drawMode.value = 0;
 	composer.render( scene, camera );
-	blendPass.params.tInput2 = edgesComposer.output;
-	composer.pass( blendPass );
 	composer.pass( fxaaPass );
+
+	bloomPass.params.useTexture = true;
+	bloomPass.params.glowTexture = glowTexture;
 	composer.pass( bloomPass );
 
-	composer.toScreen();*/
+	composer.toScreen();
 
 }

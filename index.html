@@ -16,13 +16,95 @@
     <div id="container" ></div>
     <div id="time" ></div>
     <div id="camera" ></div>
+    <div id="intro" >X-Mas Infection</div>
+    <div id="loading" >Loading...</div>
+    <div id="ready" >Ready. Click to start!</div>
 </body>
+
+<script type="x-shader/x-vertex" id="center-vs" >
+precision highp float;
+
+attribute vec3 position;
+attribute vec3 normal;
+attribute vec3 center;
+
+uniform mat3 normalMatrix;
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+
+varying vec3 vU;
+varying vec3 vNormal;
+varying vec3 vCenter;
+
+void main() {
+
+	vec4 mvPosition = modelViewMatrix * vec4( position, 1. );
+	gl_Position = projectionMatrix * mvPosition;
+
+	vU = mvPosition.xyz;
+	vNormal = normalMatrix * normal;
+	vCenter = center;
+
+}
+
+</script>
+
+<script type="x-shader/x-vertex" id="center-fs" >
+#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vU;
+varying vec3 vNormal;
+varying vec3 vCenter;
+
+uniform float drawGlow;
+
+uniform sampler2D matCapMap;
+uniform vec3 nodeColor;
+uniform vec3 wireColor;
+uniform vec3 nodeColorBright;
+uniform vec3 wireColorBright;
+uniform float brightness;
+
+float edgeFactorTri() {
+
+	vec3 d = fwidth( vCenter.xyz );
+	vec3 a3 = smoothstep( vec3( 0.0 ), d * 1., vCenter.xyz );
+	return min( min( a3.x, a3.y ), a3.z );
+
+}
+
+void main() {
+
+	vec3 n = normalize( vNormal );
+	vec3 r = reflect( normalize( vU ), n );
+	float m = 2.0 * sqrt( r.x * r.x + r.y * r.y + ( r.z + 1.0 ) * ( r.z + 1.0 ) );
+	vec2 calculatedNormal = vec2( r.x / m + 0.5,  r.y / m + 0.5 );
+
+	if( drawGlow == 0. ) {
+		vec3 shading = texture2D( matCapMap, calculatedNormal ).rgb;
+		vec3 solidColor = mix( nodeColor, nodeColorBright, brightness );
+		vec3 lineColor = mix( wireColor, wireColorBright, brightness );
+		vec3 color = solidColor * shading;
+		gl_FragColor.rgb = mix( lineColor, color.rgb, edgeFactorTri() );
+		gl_FragColor.a = 1.;
+	} else {
+		vec3 lineColor = mix( wireColor, wireColorBright, brightness );
+		gl_FragColor.rgb = brightness * mix( lineColor, vec3( 0. ), edgeFactorTri() );		
+		gl_FragColor.a = 1.;		
+	}
+
+}
+
+</script>
 
 <script type="x-shader/x-vertex" id="object-vs" >
 precision highp float;
 
 attribute vec3 position;
 attribute vec3 normal;
+attribute vec3 center;
 
 attribute float id;
 
@@ -47,6 +129,10 @@ uniform float total;
 varying vec3 vNormal;
 varying float vId;
 varying vec3 vColor;
+varying vec3 vCenter;
+varying float vy;
+varying vec3 vU;
+varying float vDepth;
 
 mat4 rotationMatrix(vec3 axis, float angle) {
     axis = normalize(axis);
@@ -82,10 +168,6 @@ float parabola( float x, float k ){
 
 	 return pow( 4. * x * ( 1. - x ), k );
 }
-
-varying float vy;
-varying vec3 vU;
-varying float vDepth;
 
 void main() {
 
@@ -128,39 +210,50 @@ void main() {
 	
 	vColor = texture2D( colorTexture, tUV ).rgb;
 	vDepth = 1. - ( - mvPosition.z - mNear ) / ( mFar - mNear ); // will map near..far to 0..1
+	vCenter = center;
 
 }
 
 </script>
 
 <script type="x-shader/x-vertex" id="object-fs" >
+#extension GL_OES_standard_derivatives : enable
+
 precision highp float;
 
 uniform sampler2D matCapMap;
-uniform float drawMode;
+uniform float drawGlow;
 
 varying vec3 vNormal;
 varying vec3 vU;
 varying vec3 vColor;
 varying float vDepth;
+varying vec3 vCenter;
+
+float edgeFactorTri() {
+
+	vec3 d = fwidth( vCenter.xyz );
+	vec3 a3 = smoothstep( vec3( 0.0 ), d * 1., vCenter.xyz );
+	return min( min( a3.x, a3.y ), a3.z );
+
+}
 
 void main() {
 
 	vec3 n = normalize( vNormal );
 
-	if( drawMode == 0. ) {
-		vec3 r = reflect( normalize( vU ), n );
-	    float m = 2.0 * sqrt( r.x * r.x + r.y * r.y + ( r.z + 1.0 ) * ( r.z + 1.0 ) );
-	    vec2 calculatedNormal = vec2( r.x / m + 0.5,  r.y / m + 0.5 );
+	vec3 r = reflect( normalize( vU ), n );
+	float m = 2.0 * sqrt( r.x * r.x + r.y * r.y + ( r.z + 1.0 ) * ( r.z + 1.0 ) );
+	vec2 calculatedNormal = vec2( r.x / m + 0.5,  r.y / m + 0.5 );
 
-		vec4 shading = vec4( texture2D( matCapMap, calculatedNormal ).rgb, 1. );
-		gl_FragColor = vec4( vColor * shading.rgb * vDepth, 1. );
-	}
-
-	if( drawMode == 1. ) {
-		vec3 color = .5 + .5 * n;
-		gl_FragColor = vec4( color.rgb, 1. );
-		gl_FragColor = vec4( vec3( vDepth ), 1. );
+	if( drawGlow == 0. ) {
+		vec3 shading = texture2D( matCapMap, calculatedNormal ).rgb;
+		vec3 color = vColor * shading.rgb  /* * vDepth*/;
+		gl_FragColor.rgb = mix( vec3( 1.0 ), color.rgb, edgeFactorTri() );
+		gl_FragColor.a = 1.;
+	} else {
+		gl_FragColor.rgb = mix( vec3( 1.0 ), vec3( 0. ), edgeFactorTri() );		
+		gl_FragColor.a = 1.;
 	}
 
 }
