@@ -47,12 +47,16 @@ precision highp float;
 
 varying float grad;
 
+float rand(vec2 co){
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
 void main() {
 
 	vec3 top = vec3( 62., 29., 66. ) / 255.;
 	vec3 bottom = vec3( 1., 12., 32. ) / 255.;
 
-	gl_FragColor = vec4( mix( top, bottom, grad ), 1. );
+	gl_FragColor = vec4( mix( top, bottom, grad ) + .01 * rand( gl_FragCoord.xy ), 1. );
 }
 
 </script>

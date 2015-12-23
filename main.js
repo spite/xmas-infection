@@ -130,7 +130,7 @@ renderer.setPixelRatio( pixelRatio );
 container.appendChild( renderer.domElement );
 renderer.setClearColor( 0 );
 
-var composer = new WAGNER.Composer( renderer, { useRGBA: true } );
+var composer = new WAGNER.Composer( renderer, { useRGBA: false } );
 var bloomPass = new WAGNER.MultiPassBloomPass();
 bloomPass.params.blurAmount = 1;
 bloomPass.params.blendMode = 11;
@@ -597,7 +597,7 @@ function generateArm( base, bothAxis ){
 		if( node[ i ] === 0 ) r.z += Math.random() * 2 * Math.PI
 		var color = nodeColorsPtr[ 'red' ];
 		if( b == 2 ) color = nodeColorsPtr[ 'blue' ];
-		if( b > 3 ) color = pickRandomColor()
+		if( b > 2 ) color = pickRandomColor()
 
 		data.push( {
 			geometry: boxGeometries[ 'cube0' + b ],
@@ -700,7 +700,7 @@ function generateBranch( base, n, tier ){
 		r.z += Math.random() * 2 * Math.PI
 		var color = nodeColorsPtr[ 'red' ];
 		if( b == 2 ) color = nodeColorsPtr[ 'blue' ];
-		if( b > 3 ) color = pickRandomColor();
+		if( b > 2 ) color = pickRandomColor();
 
 		data.push( {
 			geometry: boxGeometries[ 'cube0' + b ],
@@ -738,6 +738,8 @@ analyser.smoothingTimeConstant = .75;
 var frequencyData = new Uint8Array( analyser.fftSize );
 analyser.connect( audioContext.destination );
 
+var bkg;
+
 window.addEventListener( 'load', function() {
 
 	var mat = new THREE.RawShaderMaterial( {
@@ -745,7 +747,7 @@ window.addEventListener( 'load', function() {
 		fragmentShader: document.getElementById( 'bkg-fs' ).textContent,
 		side: THREE.BackSide
 	} );
-	var bkg = new THREE.Mesh( new THREE.IcosahedronGeometry( 50, 2 ), mat );
+	bkg = new THREE.Mesh( new THREE.IcosahedronGeometry( 50, 2 ), mat );
 	scene.add( bkg );
 
 	var geo = new Promise( function( resolve, reject ) { 
@@ -865,7 +867,7 @@ function onWindowResize() {
 	bloomPass.width = Maf.nextPowerOfTwo( w / 2 );
 	bloomPass.height = Maf.nextPowerOfTwo( h / 2 )
 	
-	glowTexture = WAGNER.Pass.prototype.getOfflineTexture( composer.width, composer.height, true );
+	glowTexture = WAGNER.Pass.prototype.getOfflineTexture( composer.width, composer.height, false );
 
 	renderer.domElement.style.width = renderer.domElement.style.height = '100%';
 }
@@ -919,6 +921,8 @@ function render() {
 
 	composer.reset();
 
+	bkg.visible = false;
+
 	boxMaterial.uniforms.drawGlow.value = 1;
 	centerObjects.forEach( function( obj ) {
 		obj.material.uniforms.drawGlow.value = 1;
@@ -926,6 +930,8 @@ function render() {
 
 	composer.render( scene, camera, null, glowTexture );
 
+	bkg.visible = true;
+	
 	boxMaterial.uniforms.drawGlow.value = 0;
 	centerObjects.forEach( function( obj ) {
 		obj.material.uniforms.drawGlow.value = 0;
