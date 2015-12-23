@@ -2,6 +2,7 @@
 
  "cx": [
    "0 cut to 0",
+   "15.48 cut to 25",
    "200 linear to 0"
  ],
 
@@ -9,6 +10,7 @@
    "0 cut to -8",
    "13.54 cut to -4",
    "14.51 cut to -40",
+   "15.48 cut to 1.5",
    "200 linear to 0"
  ],
 
@@ -16,21 +18,25 @@
    "0 cut to -8",
    "13.54 cut to -4",
    "14.51 cut to 0",
+   "15.48 cut to -25",
    "200 linear to 0"
  ],
 
  "tx": [
    "0 cut to 0",
+   "15.48 cut to -8",
    "200 linear to 0"
  ],
 
  "ty": [
    "0 cut to 0",
+   "15.48 cut to 0.6",
    "200 linear to 0"
  ],
 
  "tz": [
    "0 cut to 0",
+   "15.48 cut to -36",
    "200 linear to 0"
 ]
 }
