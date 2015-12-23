@@ -6,3 +6,4 @@ h1{ font-weight: 300; font-style: italic; font-size: 24px;}
 #time{ position: absolute; left: 0; top: 0; color : #ff00ff; z-index: 10}
 #camera{ position: absolute; left: 0; top: 18px; color : #ff00ff; z-index: 10}
 #spectrumCanvas{ position: absolute; right: 0; top: 0; z-index: 10;}
+#credits{ width: 1536px; height: 768px; background-image: url(assets/overlay.png); background-size: cover; position: absolute;left: 50%; top: 50%; transform: translate3d( -50%, -50%, 0 ); background-position: 50% 50%; pointer-events: none;}

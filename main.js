@@ -6,6 +6,77 @@ WAGNER.assetsPath = 'Wagner/assets/';
 
 // blue magenta yellow, red 
 
+var cameras = [
+	{ 
+		position: new THREE.Vector3( -5.1085910095442095, 0.8991819084385648, -16.406258047368837 ),
+		target: new THREE.Vector3( -15.06246564256313, -4.557379786814194, -7.676944281480399 )
+	},
+	{
+		position: new THREE.Vector3( -15.167371266248754, -1.8611718650298137, -10.02967931717489 ),
+		target: new THREE.Vector3( -3.573946021928795, 5.612636911932957, 3.725769636956985 )
+	},
+	{
+		position: new THREE.Vector3( 0.09221196535577691, -2.7759342860813163, -5.75362346055509 ),
+		target: new THREE.Vector3( 3.975501070437179, 0.3932562091652414, 0.14128885897680965 )
+	},
+	{
+		position: new THREE.Vector3( -14.852420323291607, 8.370085695604972, 3.1587026734168577 ),
+		target: new THREE.Vector3( -2.2283131701283376, -0.9525103222563635, 5.498442638410712 )
+	},
+	{
+		position: new THREE.Vector3( -13.500463943594722, -8.172478174265688, 0.863289836546083 ),
+		target: new THREE.Vector3( -8.578037361130349, -4.060184219299862, -4.156749814396668 )
+	},
+	{
+		position: new THREE.Vector3( 1.491019403961463, 0.5315312475731542, 19.087147738650046 ),
+		target: new THREE.Vector3( 8.864851313896068, -3.476338741741605, 7.484640006264783 )
+	},
+	{
+		position: new THREE.Vector3( -1.2548885556221723, 1.7119310892319355, -2.261982649969243 ),
+		target: new THREE.Vector3( -2.5325661017862533, -4.02667566662882, 2.768884721911386 )
+	},
+	{
+		position: new THREE.Vector3( 0.21515024877894529, 3.509129039738008, -0.4450316791854705 ),
+		target: new THREE.Vector3( -0.2657572469182987, -2.3087406037078475, 0.8852739373193121 )
+	},
+	{
+		position: new THREE.Vector3( 3.980457784533302, 2.4014426237671183, 6.060553134147385 ),
+		target: new THREE.Vector3( 2.967811741081503, 0.34403429393915247, -0.9235450697183524 )
+	},
+	{
+		position: new THREE.Vector3( 4.522856990247529, -1.3381972058748401, -2.1159511492722327 ),
+		target: new THREE.Vector3( 0.9806371240533418, -1.6665919171811383, -1.6731746936860763 )
+	},
+	{
+		position: new THREE.Vector3( 4.450706388299658, 2.722330271446955, -3.8877328097490507 ),
+		target: new THREE.Vector3( -1.9735821212039102, -0.6674130053714113, -1.7372375488211051 )
+	},
+	{
+		position: new THREE.Vector3( 2.264974974192415, -5.520940025983964, 2.5929607512373556 ),
+		target: new THREE.Vector3( 0, 0, 0 )
+	},
+	{
+		position: new THREE.Vector3( -1.3980131199482688, 3.4156016406278926, 11.433739725596356 ),
+		target: new THREE.Vector3( 1.294330289391187, 0.676332538205743, 2.4096386130665954 )
+	},
+	{
+		position: new THREE.Vector3( -6.707446606927979, -6.0409830520780545, 6.307732656098224 ),
+		target: new THREE.Vector3( -1.5902181358054397, -1.6868425676574708, -0.8366457321676409 )
+	},
+	{
+		position: new THREE.Vector3( -1.158299655239825, 10.78599146070582, 10.620884609652753 ),
+		target: new THREE.Vector3( 3.551952120151164, 2.2761756710405887, 2.227966216693934 )
+	},
+	{
+		position: new THREE.Vector3( -12.024267787541055, 1.3729790588811832, 12.964160215306094 ),
+		target: new THREE.Vector3( -7.546391586245068, 0.033365926830122336, -1.4800954302995946 )
+	},
+	{
+		position: new THREE.Vector3( 3.2733439826912134, 1.0778167663370593, 16.49872804350816 ),
+		target: new THREE.Vector3( 0, 0, 0 )
+	}
+]
+
 var nodeColorsPtr = {
 	'blue': 0, 'magenta': 1, 'yellow': 2, 'red': 3, 'green': 4
 }
@@ -30,6 +101,7 @@ var nodeColors = [ // dark bright
 ];
 
 var colorData = new Uint8Array( 4 * 5 * 4 );
+var previousTime, elapsedTime;
 
 var p = 0;
 nodeColors.forEach( function( v ) { 
@@ -112,6 +184,7 @@ if( debugMode ) {
 var timeLabel = document.getElementById( 'time' );
 var cameraLabel = document.getElementById( 'camera' );
 var container = document.getElementById( 'container' );
+var creditsLabel = document.getElementById( 'credits' );
 
 if( debugMode ) {
 	timeLabel.style.display = 'block';
@@ -139,6 +212,10 @@ DOFPass.params.aperture = .01
 DOFPass.params.focalDistance = .9
 var blendPass = new WAGNER.BlendPass();
 blendPass.params.mode = 9
+var vignettePass = new WAGNER.Vignette2Pass();
+vignettePass.params.boost = 1.5;
+vignettePass.params.reduction = 1;
+var blurPass = new WAGNER.FullBoxBlurPass();
 var glowTexture;
 
 var fxaaPass = new WAGNER.FXAAPass();
@@ -718,7 +795,7 @@ function generateBranch( base, n, tier ){
 
 var startTime;
 var storyline;
-var mode = 0;
+var mode = 1;
 
 window.addEventListener( 'keydown', function( e ) {
 
@@ -729,6 +806,8 @@ window.addEventListener( 'keydown', function( e ) {
 } );
 
 var audioContext = new AudioContext();
+var startAudioTime = performance.now();
+var offsetAudioTime
 var audioBuffer;
 var audioSource;
 
@@ -843,8 +922,10 @@ window.addEventListener( 'load', function() {
 
 	Promise.all( [ geo, a, story ] ).then( function() {
 		startTime = performance.now();
+		previousTime = startTime;
 		if( isMobile ) {
-			audioSource.start( 0 );			
+			audioSource.start( 0 );	
+			offsetAudioTime = ( performance.now() - startAudioTime ) / 1000;		
 		} else {
 			audio.play();
 		}
@@ -880,25 +961,29 @@ var TAUV3 = new THREE.Vector3( TAU, TAU, TAU );
 
 function render() {
 
+	var speedMultiplier = 1;
+	elapsedTime = .001 * ( performance.now() - previousTime );
+
 	analyser.getByteFrequencyData( frequencyData );
 	if( debugMode ) {
 		drawSpectrum( 10 );
 	}
 
-	var t = isMobile ? audioContext.currentTime : audio.currentTime;
+	var t = isMobile ? audioContext.currentTime - offsetAudioTime : audio.currentTime;
 	var l = 93;
 	requestAnimationFrame( render );
 
-	var et = 0;
-	if( t > 23 ) et = ( ( t - 23 ) / l );
-
-	boxMaterial.uniforms.time.value = t;
-	boxMaterial.uniforms.factor.value = et;
-
 	if( mode === 1 ) {
-		camera.position.set( storyline.get( 'cx', t ), storyline.get( 'cy', t ), storyline.get( 'cz', t ) );
-		camera.target.set( storyline.get( 'tx', t ), storyline.get( 'ty', t ), storyline.get( 'tz', t ) );
+		var cam = storyline.get( 'camera', t );
+		if( cam === 0 ) {
+			camera.position.set( storyline.get( 'cx', t ), storyline.get( 'cy', t ), storyline.get( 'cz', t ) );
+			camera.target.set( storyline.get( 'tx', t ), storyline.get( 'ty', t ), storyline.get( 'tz', t ) );
+		} else {
+			camera.position.copy( cameras[ cam - 1 ].position );
+			camera.target.copy( cameras[ cam - 1 ].target );
+		}
 		camera.lookAt( camera.target );
+		speedMultiplier = storyline.get( 'speed', t );
 	} else {
 		controls.update();		
 	}
@@ -908,10 +993,18 @@ function render() {
 		cameraLabel.innerHTML = 'C x:' + camera.position.x + ' y:' + camera.position.y + ' z:' + camera.position.z + '<br/>T x:' + controls.target.x + ' y:' + controls.target.y + ' z:' + controls.target.z;
 	}
 
-	scene.rotation.y = -.5 * t;
+	var et = 0;
+	if( t > 23 ) et = ( ( t - 23 ) / l );
+
+	boxMaterial.uniforms.time.value += .1 * elapsedTime * speedMultiplier;
+	boxMaterial.uniforms.factor.value = et;
+
+	var blurFactor = storyline.get( 'blur', t );
+	creditsLabel.style.opacity = blurFactor;
+
+	scene.rotation.y -= .5 * elapsedTime * speedMultiplier;
 
 	var v = getFreqRange( 25, 75 ) / 255;
-	//Maf.scale( 0, 255, )
 	centerObjects.forEach( function( obj ) {
 		obj.material.uniforms.brightness.value = v;
 	})
@@ -942,8 +1035,14 @@ function render() {
 
 	bloomPass.params.useTexture = true;
 	bloomPass.params.glowTexture = glowTexture;
+	composer.pass( vignettePass );
 	composer.pass( bloomPass );
 
+	blurPass.params.amount = 4 * blurFactor;
+	if( blurFactor > 0 ) composer.pass( blurPass );
+
 	composer.toScreen();
+
+	previousTime = performance.now();
 
 }

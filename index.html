@@ -19,6 +19,7 @@
     <div id="intro" >X-Mas Infection</div>
     <div id="loading" >Loading...</div>
     <div id="ready" >Ready. Click to start!</div>
+    <div id="credits" ></div>
 </body>
 
 <script type="x-shader/x-vertex" id="bkg-vs" >
@@ -258,7 +259,7 @@ void main() {
 	offset += parabola( f, 2. ) * 10. * texture2D( offsetTexture, tUV ).rgb;
 	vec3 rotation = texture2D( rotTexture, tUV ).rgb;
 	mat3 rotx = rotationX( rotation.x );
-	mat3 roty = rotationY( rotation.y + time * ( 1. - f ) );
+	mat3 roty = rotationY( rotation.y + 65. * time * ( 1. - f ) );
 	mat3 rotz = rotationZ( rotation.z );
 
 	mat3 rot = rotx * roty * rotz;
