@@ -4,16 +4,49 @@ WAGNER.vertexShadersPath = 'Wagner/vertex-shaders';
 WAGNER.fragmentShadersPath = 'Wagner/fragment-shaders';
 WAGNER.assetsPath = 'Wagner/assets/';
 
-var nodeColors = {
-	'darkBlue':     { solid: 0x002768, wire: 0x0087ff },
-	'lightBlue':    { solid: 0x3681ff, wire: 0x00ffff },
-	'darkMagenta':  { solid: 0x750044, wire: 0xff0039 },
-	'lightMagenta': { solid: 0xc60054, wire: 0xff1ead },
-	'darkYellow':   { solid: 0xcc4e00, wire: 0xe97c10 },
-	'lightYellow':  { solid: 0xff9000, wire: 0xffff00 },
-	'darkRed':      { solid: 0x4e0000, wire: 0xa80000 },
-	'lightRed':     { solid: 0xab0000, wire: 0xff0000 }
-};
+// blue magenta yellow, red 
+
+var nodeColorsPtr = {
+	'blue': 0, 'magenta': 1, 'yellow': 2, 'red': 3, 'green': 4
+}
+
+var nodeColors = [ // dark bright
+	
+	0x002768, 0x0087ff,
+	0x3681ff, 0x00ffff,
+	
+	0x750044, 0xff0039,
+	0xc60054, 0xff1ead,
+
+	0xcc4e00, 0xe97c10,
+	0xff9000, 0xffff00,
+	
+	0x4e0000, 0xa80000,
+	0xab0000, 0xff0000,
+
+	0x004e35, 0x009968,
+	0x02b27a, 0x00ffae
+
+];
+
+var colorData = new Uint8Array( 4 * 5 * 4 );
+
+var p = 0;
+nodeColors.forEach( function( v ) { 
+
+	var c = new THREE.Color( v )
+	colorData[ p     ] = c.r * 255
+	colorData[ p + 1 ] = c.g * 255
+	colorData[ p + 2 ] = c.b * 255
+	colorData[ p + 3 ] = 0
+	p += 4;
+
+} );
+
+var nodeColorTexture = new THREE.DataTexture( colorData, 4, 5, THREE.RGBAFormat );
+nodeColorTexture.minFilter = THREE.NearestFilter;
+nodeColorTexture.magFilter = THREE.NearestFilter;
+nodeColorTexture.needsUpdate = true;
 
 var centerObjects = []
 
@@ -123,10 +156,8 @@ var matCap = THREE.ImageUtils.loadTexture( 'assets/matcap.png' ) ;
 var centerMaterial = new THREE.RawShaderMaterial( {
 	uniforms: {
 		matCapMap: { type: 't', value: matCap },
-		nodeColor: { type: 'c', value: new THREE.Color() },
-		wireColor: { type: 'c', value: new THREE.Color() },
-		nodeColorBright: { type: 'c', value: new THREE.Color() },
-		wireColorBright: { type: 'c', value: new THREE.Color() },
+		colorsMap: { type: 't', value: null },
+		objectColor: { type: 'f', value: 0 },
 		brightness: { type: 'f', value: 0 },
 		drawGlow: { type: 'f', value: 0 }
 	},
@@ -143,12 +174,14 @@ var boxMaterial = new THREE.RawShaderMaterial( {
 		orbitTexture: { type: 't', value: null },
 		offsetTexture: { type: 't', value: null },
 		colorTexture: { type: 't', value: null },
+		colorsMap: { type: 't', value: nodeColorTexture },
 		posDimensions: { type: 'v2', value: new THREE.Vector2( 0, 0 ) },
 		time: { type: 'f', value: 0 },
 		factor: { type: 'f', value: 0 },
 		total: { type: 'f', value: 0 },
 		mNear: { type: 'f', value: camera.near },
 		mFar: { type: 'f', value: camera.far },
+		brightness: { type: 'f', value: 0 },
 		drawGlow: { type: 'f', value: 0 }
 	},
 	vertexShader: document.getElementById( 'object-vs' ).textContent,
@@ -212,7 +245,7 @@ function loadCenter() {
 	return new Promise( function( resolve, reject ) { 
 
 		var boxes = [ 'frame', 'dots', 'cristal' ];
-		var boxColors = [ 'Magenta', 'Blue', 'Yellow' ]
+		var boxColors = [ 'magenta', 'blue', 'yellow' ]
 		var promises = [];
 		var geometries = {};
 
@@ -238,10 +271,8 @@ function loadCenter() {
 
 					var mat = centerMaterial.clone();
 					mat.uniforms.matCapMap.value = matCap;
-					mat.uniforms.nodeColor.value.setHex( nodeColors[ 'dark' + boxColors[ id ] ].solid );
-					mat.uniforms.wireColor.value.setHex( nodeColors[ 'dark' + boxColors[ id ] ].wire );
-					mat.uniforms.nodeColorBright.value.setHex( nodeColors[ 'light' + boxColors[ id ] ].solid );
-					mat.uniforms.wireColorBright.value.setHex( nodeColors[ 'light' + boxColors[ id ] ].wire );
+					mat.uniforms.colorsMap.value = nodeColorTexture;
+					mat.uniforms.objectColor.value = nodeColorsPtr[ boxColors[ id ] ];
 
 					var mesh = new THREE.Mesh( src, mat );
 					mesh.rotation.x = Math.PI / 4;
@@ -492,9 +523,9 @@ function initGeometries() {
 	cubePositions.forEach( function( v, i ) { 
 
 		var v = new THREE.Vector3( Math.random(), Math.random(), Math.random() );
-		colorData[ p     ] = v.x
-		colorData[ p + 1 ] = v.y
-		colorData[ p + 2 ] = v.z
+		colorData[ p     ] = data[ i ].color
+		colorData[ p + 1 ] = 0//v.y
+		colorData[ p + 2 ] = 0//v.z
 		colorData[ p + 3 ] = 0
 		p += 4;
 
@@ -511,7 +542,7 @@ function initGeometries() {
 	m.frustumCulled = false;
 	scene.add( m );
 
-	var plane = new THREE.Mesh( new THREE.PlaneGeometry( 8, 8 ), new THREE.MeshBasicMaterial( { map: posTexture, side: THREE.DoubleSide } ) );
+	var plane = new THREE.Mesh( new THREE.PlaneGeometry( 8, 8 ), new THREE.MeshBasicMaterial( { map: nodeColorTexture, side: THREE.DoubleSide } ) );
 	//scene.add( plane );
 
 	/*var m2 = new THREE.MeshBasicMaterial( { color: 0xfffffff, wireframe: true, depthTest: false, opacity: .1, transparent: true, blending: THREE.AdditiveBlending })
@@ -522,6 +553,14 @@ function initGeometries() {
 		m.castShadow = m.receiveShadow = true;
 		scene.add( m );
 	} );*/
+
+}
+
+function pickRandomColor() {
+
+	var c = [ 'magenta', 'blue', 'green' ]
+	var res = c[ ~~ ( Math.random() * c.length ) ];
+	return nodeColorsPtr[ res ];
 
 }
 
@@ -555,12 +594,16 @@ function generateArm( base, bothAxis ){
 		p.applyMatrix4( base.matrixWorld );
 		var r = base.rotation.clone();
 		if( node[ i ] === 0 ) r.z += Math.random() * 2 * Math.PI
+		var color = nodeColorsPtr[ 'red' ];
+		if( b == 2 ) color = nodeColorsPtr[ 'blue' ];
+		if( b > 3 ) color = pickRandomColor()
+
 		data.push( {
 			geometry: boxGeometries[ 'cube0' + b ],
 			position: p,
 			rotation: r,
 			tier: i,
-			color: nodeColors[ 0 ]
+			color: color
 		} );
 
 		if( node[ i ] > 0 ) {
@@ -625,7 +668,7 @@ function generateArm( base, bothAxis ){
 				position: p,
 				rotation: r,
 				tier: tierPtr + i,
-				color: nodeColors[ 0 ]
+				color: pickRandomColor()
 			} );
 
 		}
@@ -654,11 +697,16 @@ function generateBranch( base, n, tier ){
 		p.applyMatrix4( base.matrixWorld );
 		var r = base.rotation.clone();
 		r.z += Math.random() * 2 * Math.PI
+		var color = nodeColorsPtr[ 'red' ];
+		if( b == 2 ) color = nodeColorsPtr[ 'blue' ];
+		if( b > 3 ) color = pickRandomColor();
+
 		data.push( {
 			geometry: boxGeometries[ 'cube0' + b ],
 			position: p,
 			rotation: r,
-			tier: tier + i
+			tier: tier + i,
+			color: color
 		} );
 
 		pos += .5 * size * w;
@@ -814,7 +862,7 @@ function render() {
 
 	analyser.getByteFrequencyData( frequencyData );
 	if( debugMode ) {
-		drawSpectrum( 2 );
+		drawSpectrum( 10 );
 	}
 
 	var t = audio.currentTime;
@@ -840,17 +888,18 @@ function render() {
 		cameraLabel.innerHTML = 'C x:' + camera.position.x + ' y:' + camera.position.y + ' z:' + camera.position.z + '<br/>T x:' + controls.target.x + ' y:' + controls.target.y + ' z:' + controls.target.z;
 	}
 
-	scene.rotation.y = .1 * t;
+	scene.rotation.y = -.5 * t;
 
-	//renderer.render( scene, camera );
-
-	composer.reset();
-
-	var v = getFreqRange( 100, 102 ) / 255;
+	var v = getFreqRange( 25, 75 ) / 255;
 	//Maf.scale( 0, 255, )
 	centerObjects.forEach( function( obj ) {
 		obj.material.uniforms.brightness.value = v;
 	})
+	boxMaterial.uniforms.brightness.value = v;
+
+//	renderer.render( scene, camera );
+
+	composer.reset();
 
 	boxMaterial.uniforms.drawGlow.value = 1;
 	centerObjects.forEach( function( obj ) {
