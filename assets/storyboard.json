@@ -1,0 +1,36 @@
+{
+
+ "cx": [
+   "0 cut to 0",
+   "200 linear to 0"
+ ],
+
+ "cy": [
+   "0 cut to -8",
+   "13.54 cut to -4",
+   "14.51 cut to -40",
+   "200 linear to 0"
+ ],
+
+ "cz": [
+   "0 cut to -8",
+   "13.54 cut to -4",
+   "14.51 cut to 0",
+   "200 linear to 0"
+ ],
+
+ "tx": [
+   "0 cut to 0",
+   "200 linear to 0"
+ ],
+
+ "ty": [
+   "0 cut to 0",
+   "200 linear to 0"
+ ],
+
+ "tz": [
+   "0 cut to 0",
+   "200 linear to 0"
+]
+}

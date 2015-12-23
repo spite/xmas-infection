@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Christmas Virus</title>
+    <meta property="og:description" content="Christmas Virus">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="stylesheet" href="main.css">
+    <!--<link href='https://fonts.googleapis.com/css?family=Lato:400,700,700italic,400italic,300,300italic' rel='stylesheet' type='text/css'>-->
+</head>
+
+</script>
+
+<body>
+    <!--<h1>Christmas Virus</h1>-->
+    <div id="container" ></div>
+</body>
+
+<script type="x-shader/x-vertex" id="vertexshader">
+
+    attribute float light;
+
+    varying float vLight;
+    varying vec3 vNormal;
+
+    void main() {
+
+        vLight = light;
+
+        vec4 vPosition = modelViewMatrix * vec4( position, 1.0 );
+        gl_Position = projectionMatrix * vPosition;
+        vNormal = normalMatrix * normal;
+        
+    }
+
+</script>
+
+<script type="x-shader/x-fragment" id="fragmentshader">
+
+    varying float vLight;
+    varying vec3 vNormal;
+
+    void main() {
+
+        gl_FragColor = vec4( ( .5 + .5 * vNormal ) * vLight, 1. );
+       
+    }
+
+</script>
+
+<script src="libs/three.min.js"></script>
+<script src="libs/OrbitControls.js"></script>
+<script src="libs/OBJLoader.js"></script>
+<script src="libs/Maf.js"></script>
+
+<script src="main-lights.js"></script>
+
+</html>

@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Christmas Virus</title>
+    <meta property="og:description" content="Christmas Virus">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="stylesheet" href="main.css">
+    <!--<link href='https://fonts.googleapis.com/css?family=Lato:400,700,700italic,400italic,300,300italic' rel='stylesheet' type='text/css'>-->
+</head>
+
+</script>
+
+<body>
+    <!--<h1>Christmas Virus</h1>-->
+    <div id="container" ></div>
+    <div id="time" ></div>
+    <div id="camera" ></div>
+</body>
+
+<script type="x-shader/x-vertex" id="object-vs" >
+precision highp float;
+
+attribute vec3 position;
+attribute vec3 normal;
+
+attribute float id;
+
+uniform mat3 normalMatrix;
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+
+uniform sampler2D posTexture;
+uniform sampler2D rotTexture;
+uniform sampler2D orbitTexture;
+uniform sampler2D offsetTexture;
+uniform sampler2D colorTexture;
+uniform vec2 posDimensions;
+
+uniform float mNear;
+uniform float mFar;
+
+uniform float time;
+uniform float factor;
+uniform float total;
+
+varying vec3 vNormal;
+varying float vId;
+varying vec3 vColor;
+
+mat4 rotationMatrix(vec3 axis, float angle) {
+    axis = normalize(axis);
+    float s = sin(angle);
+    float c = cos(angle);
+    float oc = 1.0 - c;
+    
+    return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
+                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
+                0.0,                                0.0,                                0.0,                                1.0);
+}
+
+mat3 rotationX( float angle ) {
+	return mat3( 1., 0., 0., 
+				 0., cos( angle ), -sin( angle ), 
+				 0., sin( angle ), cos( angle ) );
+}
+
+mat3 rotationY( float angle ) {
+	return mat3( cos( angle ), 0., sin( angle ),
+				 0., 1., 0.,
+				 -sin( angle ), 0., cos( angle ) );
+}
+
+mat3 rotationZ( float angle ) {
+	return mat3( cos( angle ), -sin( angle ), 0.,
+				 sin( angle ), cos( angle ), 0., 
+				 0., 0., 1. );
+}
+
+float parabola( float x, float k ){
+
+	 return pow( 4. * x * ( 1. - x ), k );
+}
+
+varying float vy;
+varying vec3 vU;
+varying float vDepth;
+
+void main() {
+
+	float fId = float( id );
+	float u = mod( fId, posDimensions.x ) / posDimensions.x;
+	float v = floor( fId / posDimensions.x ) / posDimensions.y;
+	vy = v;
+	vec2 tUV = vec2( u, v );
+
+	vId = id;
+
+	float step = 1. / total;
+	float f = 0.;
+	if( factor < fId * step ) f = 0.;
+	else if( factor > ( fId * step + 20. * step ) ) f = 1.;
+	else {
+		f = ( factor - ( fId * step ) ) / ( 20. * step );
+		f = clamp( f, 0., 1. );
+	}
+
+	vec3 realPosition = /*rotationY( .1 * time ) * */ texture2D( posTexture, tUV ).rgb;
+	vec3 orbitPosition = rotationY( .2 * time ) * texture2D( orbitTexture, tUV ).rgb;
+	
+	vec3 offset = mix( orbitPosition, realPosition, f );
+	offset += parabola( f, 2. ) * 10. * texture2D( offsetTexture, tUV ).rgb;
+	vec3 rotation = texture2D( rotTexture, tUV ).rgb;
+	mat3 rotx = rotationX( rotation.x );
+	mat3 roty = rotationY( rotation.y + time * ( 1. - f ) );
+	mat3 rotz = rotationZ( rotation.z );
+
+	mat3 rot = rotx * roty * rotz;
+
+	vNormal = normalMatrix * rot * normal;
+
+	vec3 nPos = rot * position + offset;
+	vec4 mvPosition = modelViewMatrix * vec4( nPos, 1. );
+	gl_Position = projectionMatrix * mvPosition;
+
+	vU = mvPosition.xyz;
+	
+	vColor = texture2D( colorTexture, tUV ).rgb;
+	vDepth = 1. - ( - mvPosition.z - mNear ) / ( mFar - mNear ); // will map near..far to 0..1
+
+}
+
+</script>
+
+<script type="x-shader/x-vertex" id="object-fs" >
+precision highp float;
+
+uniform sampler2D matCapMap;
+uniform float drawMode;
+
+varying vec3 vNormal;
+varying vec3 vU;
+varying vec3 vColor;
+varying float vDepth;
+
+void main() {
+
+	vec3 n = normalize( vNormal );
+
+	if( drawMode == 0. ) {
+		vec3 r = reflect( normalize( vU ), n );
+	    float m = 2.0 * sqrt( r.x * r.x + r.y * r.y + ( r.z + 1.0 ) * ( r.z + 1.0 ) );
+	    vec2 calculatedNormal = vec2( r.x / m + 0.5,  r.y / m + 0.5 );
+
+		vec4 shading = vec4( texture2D( matCapMap, calculatedNormal ).rgb, 1. );
+		gl_FragColor = vec4( vColor * shading.rgb * vDepth, 1. );
+	}
+
+	if( drawMode == 1. ) {
+		vec3 color = .5 + .5 * n;
+		gl_FragColor = vec4( color.rgb, 1. );
+		gl_FragColor = vec4( vec3( vDepth ), 1. );
+	}
+
+}
+
+</script>
+
+<script src="libs/three.min.js"></script>
+<script src="libs/OrbitControls.js"></script>
+<script src="libs/OBJLoader.js"></script>
+<script src="libs/Maf.js"></script>
+<script src="Wagner/Wagner.js"></script>
+<script src="Wagner/Wagner.base.js"></script>
+<script src="Wagner/ShaderLoader.js"></script>
+<script src="libs/storyline.js"></script>
+
+<script src="main.js"></script>
+
+</html>
