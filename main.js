@@ -1,4 +1,4 @@
-'use strict'
+//'use strict'
 
 WAGNER.vertexShadersPath = 'Wagner/vertex-shaders';
 WAGNER.fragmentShadersPath = 'Wagner/fragment-shaders';
@@ -120,6 +120,13 @@ nodeColorTexture.minFilter = THREE.NearestFilter;
 nodeColorTexture.magFilter = THREE.NearestFilter;
 nodeColorTexture.needsUpdate = true;
 
+var spectrumData = new Uint8Array( 5 * 1 * 4 );
+
+var spectrumTexture = new THREE.DataTexture( spectrumData, 5, 1, THREE.RGBAFormat );
+spectrumTexture.minFilter = THREE.NearestFilter;
+spectrumTexture.magFilter = THREE.NearestFilter;
+spectrumTexture.needsUpdate = true;
+
 var centerObjects = []
 
 function getParameterByName(name) {
@@ -185,6 +192,8 @@ var timeLabel = document.getElementById( 'time' );
 var cameraLabel = document.getElementById( 'camera' );
 var container = document.getElementById( 'container' );
 var creditsLabel = document.getElementById( 'credits' );
+var intro = document.getElementById( 'intro' );
+var loading = document.getElementById( 'loading' );
 
 if( debugMode ) {
 	timeLabel.style.display = 'block';
@@ -229,13 +238,14 @@ renderer.shadowMap.type = THREE.PCFShadowMap;
 
 var shadowMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff, specular: 0xffffff, shininess: 0 });
 
-var matCap = THREE.ImageUtils.loadTexture( 'assets/matcap.png' ) ;
+var matCap;
 
 var centerMaterial = new THREE.RawShaderMaterial( {
 	uniforms: {
 		matCapMap: { type: 't', value: matCap },
 		colorsMap: { type: 't', value: null },
 		objectColor: { type: 'f', value: 0 },
+		spectrumTexture: { type: 't', value: spectrumTexture },
 		brightness: { type: 'f', value: 0 },
 		drawGlow: { type: 'f', value: 0 }
 	},
@@ -252,9 +262,11 @@ var boxMaterial = new THREE.RawShaderMaterial( {
 		orbitTexture: { type: 't', value: null },
 		offsetTexture: { type: 't', value: null },
 		colorTexture: { type: 't', value: null },
+		spectrumTexture: { type: 't', value: spectrumTexture },
 		colorsMap: { type: 't', value: nodeColorTexture },
 		posDimensions: { type: 'v2', value: new THREE.Vector2( 0, 0 ) },
 		time: { type: 'f', value: 0 },
+		rotFactor: { type: 'f', value: 0 },
 		factor: { type: 'f', value: 0 },
 		total: { type: 'f', value: 0 },
 		mNear: { type: 'f', value: camera.near },
@@ -351,6 +363,7 @@ function loadCenter() {
 					mat.uniforms.matCapMap.value = matCap;
 					mat.uniforms.colorsMap.value = nodeColorTexture;
 					mat.uniforms.objectColor.value = nodeColorsPtr[ boxColors[ id ] ];
+					mat.uniforms.spectrumTexture.value = spectrumTexture;
 
 					var mesh = new THREE.Mesh( src, mat );
 					mesh.rotation.x = Math.PI / 4;
@@ -620,7 +633,7 @@ function initGeometries() {
 	m.frustumCulled = false;
 	scene.add( m );
 
-	var plane = new THREE.Mesh( new THREE.PlaneGeometry( 8, 8 ), new THREE.MeshBasicMaterial( { map: nodeColorTexture, side: THREE.DoubleSide } ) );
+	var plane = new THREE.Mesh( new THREE.PlaneGeometry( 8, 8 ), new THREE.MeshBasicMaterial( { map: spectrumTexture, side: THREE.DoubleSide } ) );
 	//scene.add( plane );
 
 	/*var m2 = new THREE.MeshBasicMaterial( { color: 0xfffffff, wireframe: true, depthTest: false, opacity: .1, transparent: true, blending: THREE.AdditiveBlending })
@@ -805,6 +818,8 @@ window.addEventListener( 'keydown', function( e ) {
 
 } );
 
+var AudioContext = AudioContext || webkitAudioContext;
+
 var audioContext = new AudioContext();
 var startAudioTime = performance.now();
 var offsetAudioTime
@@ -821,6 +836,11 @@ var bkg;
 
 window.addEventListener( 'load', function() {
 
+	matCap = THREE.ImageUtils.loadTexture( 'assets/matcap.png' ) ;
+
+	centerMaterial.uniforms.matCapMap.value = matCap;
+	boxMaterial.uniforms.matCapMap.value = matCap;
+	
 	var mat = new THREE.RawShaderMaterial( {
 		vertexShader: document.getElementById( 'bkg-vs' ).textContent,
 		fragmentShader: document.getElementById( 'bkg-fs' ).textContent,
@@ -879,7 +899,6 @@ window.addEventListener( 'load', function() {
 					audioSource.connect( analyser );
 
 					resolve();
-					//window.addEventListener( 'click', playSound );
 
 				}, function() {
 					reject();
@@ -893,12 +912,14 @@ window.addEventListener( 'load', function() {
 
 			audio = document.createElement( 'audio' );
 
-			audio.controls = true;
-			audio.style.position = 'absolute';
-			audio.style.width = '100%';
-			audio.style.left = '0';
-			audio.style.bottom = '25px';
-			document.body.appendChild( audio );
+			if( debugMode ) {
+				audio.controls = true;
+				audio.style.position = 'absolute';
+				audio.style.width = '100%';
+				audio.style.left = '0';
+				audio.style.bottom = '25px';
+				document.body.appendChild( audio );
+			}
 
 			function onAudioReady() {
 
@@ -923,9 +944,15 @@ window.addEventListener( 'load', function() {
 	Promise.all( [ geo, a, story ] ).then( function() {
 		startTime = performance.now();
 		previousTime = startTime;
+		loading.style.opacity = 0;
+		intro.style.opacity = 0;
 		if( isMobile ) {
-			audioSource.start( 0 );	
-			offsetAudioTime = ( performance.now() - startAudioTime ) / 1000;		
+			function playSound() {
+				window.removeEventListener( 'click', playSound );
+				audioSource.start( 0 );	
+				offsetAudioTime = ( performance.now() - startAudioTime ) / 1000;
+			}
+			window.addEventListener( 'click', playSound );
 		} else {
 			audio.play();
 		}
@@ -959,23 +986,40 @@ var tmpVector = new THREE.Vector3();
 var ZEROV3 = new THREE.Vector3( 0, 0, 0 );
 var TAUV3 = new THREE.Vector3( TAU, TAU, TAU );
 
+var maxFreq = [ 255 ,255 ,255, 255 ,255 ] ;
+var minFreq = [0, 0, 0, 0, 0 ];
+//var freqs = [ [ 0, 10 ], [ 10, 30 ], [ 30, 60 ], [ 60, 100 ], [ 100, 150 ]]
+var freqs = [ [ 60, 100 ], [ 10, 30 ], [ 0, 10 ], [ 100, 150 ], [ 30, 60 ] ]
 function render() {
 
 	var speedMultiplier = 1;
 	elapsedTime = .001 * ( performance.now() - previousTime );
 
 	analyser.getByteFrequencyData( frequencyData );
+	var p = 0;
+	var pf = 0;
+	for( var pf = 0; pf < 5; pf++ ){
+		var f = getFreqRange( freqs[ pf ][ 0 ], freqs[ pf ][ 1 ] );
+		if( f > maxFreq[ pf ] ) maxFreq[ pf ] = f;
+		if( f < minFreq[ pf ] ) minFreq[ pf ] = f;
+		spectrumData[ p ] = 255 * ( f - minFreq[ pf ] ) / ( maxFreq[ pf ] - minFreq[ pf ] );
+		maxFreq[ pf ] -= .25;
+		minFreq[ pf ] += .2;
+		p += 4;
+	}
+	spectrumTexture.needsUpdate = true;
+
 	if( debugMode ) {
 		drawSpectrum( 10 );
 	}
 
-	var t = isMobile ? audioContext.currentTime - offsetAudioTime : audio.currentTime;
+	var t = isMobile ? audioContext.currentTime -  0. *offsetAudioTime : audio.currentTime;
 	var l = 93;
 	requestAnimationFrame( render );
 
 	if( mode === 1 ) {
 		var cam = storyline.get( 'camera', t );
-		if( cam === 0 ) {
+		if( cam === 0 || cam === null ) {
 			camera.position.set( storyline.get( 'cx', t ), storyline.get( 'cy', t ), storyline.get( 'cz', t ) );
 			camera.target.set( storyline.get( 'tx', t ), storyline.get( 'ty', t ), storyline.get( 'tz', t ) );
 		} else {
@@ -997,6 +1041,7 @@ function render() {
 	if( t > 23 ) et = ( ( t - 23 ) / l );
 
 	boxMaterial.uniforms.time.value += .1 * elapsedTime * speedMultiplier;
+	boxMaterial.uniforms.rotFactor.value += 10. * elapsedTime * speedMultiplier;
 	boxMaterial.uniforms.factor.value = et;
 
 	var blurFactor = storyline.get( 'blur', t );
@@ -1040,6 +1085,8 @@ function render() {
 
 	blurPass.params.amount = 4 * blurFactor;
 	if( blurFactor > 0 ) composer.pass( blurPass );
+
+	container.style.opacity = storyline.get( 'fade', t );
 
 	composer.toScreen();
 

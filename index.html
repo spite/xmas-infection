@@ -16,8 +16,8 @@
     <div id="container" ></div>
     <div id="time" ></div>
     <div id="camera" ></div>
-    <div id="intro" >X-Mas Infection</div>
-    <div id="loading" >Loading...</div>
+    <div id="intro" ></div>
+    <div id="loading" >  Loading...</div>
     <div id="ready" >Ready. Click to start!</div>
     <div id="credits" ></div>
 </body>
@@ -81,6 +81,7 @@ varying vec3 vCenter;
 
 uniform float objectColor;
 uniform float brightness;
+uniform sampler2D spectrumTexture;
 
 varying vec3 solidColor;
 varying vec3 lineColor;
@@ -99,8 +100,9 @@ void main() {
 	vec3 wireColor = .25 * texture2D( colorsMap, cUv + vec2( 1. / 4., 0. )).rgb;
 	vec3 nodeColorBright = texture2D( colorsMap, cUv + vec2( 2. / 4., 0. ) ).rgb;
 	vec3 wireColorBright = texture2D( colorsMap, cUv + vec2( 3. / 4., 0. ) ).rgb;
-	solidColor = mix( nodeColor, nodeColorBright, brightness );
-	lineColor = mix( wireColor, wireColorBright, brightness );
+	float spectrumBrightness = texture2D( spectrumTexture, vec2( ( objectColor + .5 ) / 5., 0. ) ).r;
+	solidColor = mix( nodeColor, nodeColorBright, spectrumBrightness );
+	lineColor = mix( wireColor, wireColorBright, spectrumBrightness );
 
 }
 
@@ -174,6 +176,7 @@ uniform sampler2D rotTexture;
 uniform sampler2D orbitTexture;
 uniform sampler2D offsetTexture;
 uniform sampler2D colorTexture;
+uniform sampler2D spectrumTexture;
 uniform vec2 posDimensions;
 
 uniform float mNear;
@@ -182,6 +185,7 @@ uniform float mFar;
 uniform float time;
 uniform float factor;
 uniform float total;
+uniform float rotFactor;
 
 varying vec3 vNormal;
 varying float vId;
@@ -233,6 +237,8 @@ float parabola( float x, float k ){
 	 return pow( 4. * x * ( 1. - x ), k );
 }
 
+#define M_PI 3.1415926535897932384626433832795
+
 void main() {
 
 	float fId = float( id );
@@ -249,8 +255,8 @@ void main() {
 	else if( factor > ( fId * step + 20. * step ) ) f = 1.;
 	else {
 		f = ( factor - ( fId * step ) ) / ( 20. * step );
-		f = clamp( f, 0., 1. );
 	}
+	f = clamp( f, 0., 1. );
 
 	vec3 realPosition = /*rotationY( .1 * time ) * */ texture2D( posTexture, tUV ).rgb;
 	vec3 orbitPosition = rotationY( .2 * time ) * texture2D( orbitTexture, tUV ).rgb;
@@ -259,7 +265,7 @@ void main() {
 	offset += parabola( f, 2. ) * 10. * texture2D( offsetTexture, tUV ).rgb;
 	vec3 rotation = texture2D( rotTexture, tUV ).rgb;
 	mat3 rotx = rotationX( rotation.x );
-	mat3 roty = rotationY( rotation.y + 65. * time * ( 1. - f ) );
+	mat3 roty = rotationY( rotation.y + rotFactor * ( 1. - f ) );
 	mat3 rotz = rotationZ( rotation.z );
 
 	mat3 rot = rotx * roty * rotz;
@@ -281,8 +287,9 @@ void main() {
 	vec3 wireColor = .25 * texture2D( colorsMap, cUv + vec2( 1. / 4., 0. )).rgb;
 	vec3 nodeColorBright = texture2D( colorsMap, cUv + vec2( 2. / 4., 0. ) ).rgb;
 	vec3 wireColorBright = texture2D( colorsMap, cUv + vec2( 3. / 4., 0. ) ).rgb;
-	solidColor = mix( nodeColor, nodeColorBright, brightness );
-	lineColor = mix( wireColor, wireColorBright, brightness );
+	float spectrumBrightness = texture2D( spectrumTexture, vec2( ( vColor.r + .5 ) / 5., 0. ) ).r;
+	solidColor = mix( nodeColor, nodeColorBright, spectrumBrightness );
+	lineColor = mix( wireColor, wireColorBright, spectrumBrightness );
 
 }
 

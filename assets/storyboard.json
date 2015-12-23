@@ -82,5 +82,10 @@
    "0 cut to 0",
    "118.06 cut to 0",
    "120 linear to 1"
+],
+
+"fade" : [
+   "0 cut to 0",
+   "1 linear to 1"
 ]
 }
