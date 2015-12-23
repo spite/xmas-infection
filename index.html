@@ -21,6 +21,42 @@
     <div id="ready" >Ready. Click to start!</div>
 </body>
 
+<script type="x-shader/x-vertex" id="bkg-vs" >
+precision highp float;
+
+attribute vec3 position;
+
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+
+varying float grad;
+
+void main() {
+
+	vec4 mvPosition = modelViewMatrix * vec4( position, 1. );
+	gl_Position = projectionMatrix * mvPosition;
+
+	grad = 1. - ( position.y + 25. ) / 50.;
+
+}
+
+</script>
+
+<script type="x-shader/x-fragment" id="bkg-fs" >
+precision highp float;
+
+varying float grad;
+
+void main() {
+
+	vec3 top = vec3( 62., 29., 66. ) / 255.;
+	vec3 bottom = vec3( 1., 12., 32. ) / 255.;
+
+	gl_FragColor = vec4( mix( top, bottom, grad ), 1. );
+}
+
+</script>
+
 <script type="x-shader/x-vertex" id="center-vs" >
 precision highp float;
 

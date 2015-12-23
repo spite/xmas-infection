@@ -57,6 +57,7 @@ function getParameterByName(name) {
     return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
 }
 
+var isMobile = getParameterByName( 'mobile' ) === 'true';
 var debugMode = getParameterByName( 'debug' ) === 'true';
 
 function addSpectrumVisualiser() {
@@ -558,7 +559,7 @@ function initGeometries() {
 
 function pickRandomColor() {
 
-	var c = [ 'magenta', 'blue', 'green' ]
+	var c = [ 'magenta', 'blue', 'green', 'yellow' ]
 	var res = c[ ~~ ( Math.random() * c.length ) ];
 	return nodeColorsPtr[ res ];
 
@@ -739,6 +740,14 @@ analyser.connect( audioContext.destination );
 
 window.addEventListener( 'load', function() {
 
+	var mat = new THREE.RawShaderMaterial( {
+		vertexShader: document.getElementById( 'bkg-vs' ).textContent,
+		fragmentShader: document.getElementById( 'bkg-fs' ).textContent,
+		side: THREE.BackSide
+	} );
+	var bkg = new THREE.Mesh( new THREE.IcosahedronGeometry( 50, 2 ), mat );
+	scene.add( bkg );
+
 	var geo = new Promise( function( resolve, reject ) { 
 
 		loadBoxes().then( function( g ) {
@@ -771,63 +780,72 @@ window.addEventListener( 'load', function() {
 
 	var a = new Promise( function( resolve, reject ) {
 		
-		audio = document.createElement( 'audio' );
+		if( isMobile ) {
 
-		audio.controls = true;
-		audio.style.position = 'absolute';
-		audio.style.width = '100%';
-		audio.style.left = '0';
-		audio.style.bottom = '25px';
-		document.body.appendChild( audio );
+			var request = new XMLHttpRequest();
+			request.open( 'GET', 'assets/acidbeat - xmas infection.mp3', true );
+			request.responseType = 'arraybuffer';
 
-		function onAudioReady() {
+			request.onload = function() {
 
-			audio.removeEventListener( 'canplay', onAudioReady );
-			audio.pause();
+				audioContext.decodeAudioData( request.response, function( buffer ) {
+					
+					audioBuffer = buffer;
 
-			var audioSource = audioContext.createMediaElementSource( audio );
-			audioSource.connect( analyser );
+					audioSource = audioContext.createBufferSource(); 
+					audioSource.buffer = audioBuffer;
 
-			resolve();
+					audioSource.connect( analyser );
 
-		}
+					resolve();
+					//window.addEventListener( 'click', playSound );
 
-		audio.addEventListener( 'canplay', onAudioReady );
+				}, function() {
+					reject();
+				} );
 
-		audio.src = 'assets/acidbeat - xmas infection.mp3';
+			};
 
-		/*var request = new XMLHttpRequest();
-		request.open( 'GET', 'assets/acidbeat - xmas infection.mp3', true );
-		request.responseType = 'arraybuffer';
+			request.send();
 
-		request.onload = function() {
+		} else {
 
-			audioContext.decodeAudioData( request.response, function( buffer ) {
-				
-				audioBuffer = buffer;
+			audio = document.createElement( 'audio' );
 
-				audioSource = audioContext.createBufferSource(); 
-				audioSource.buffer = audioBuffer;
+			audio.controls = true;
+			audio.style.position = 'absolute';
+			audio.style.width = '100%';
+			audio.style.left = '0';
+			audio.style.bottom = '25px';
+			document.body.appendChild( audio );
 
+			function onAudioReady() {
+
+				audio.removeEventListener( 'canplay', onAudioReady );
+				audio.pause();
+
+				var audioSource = audioContext.createMediaElementSource( audio );
 				audioSource.connect( analyser );
 
 				resolve();
-				//window.addEventListener( 'click', playSound );
 
-			}, function() {
-				reject();
-			} );
+			}
 
-		};
+			audio.addEventListener( 'canplay', onAudioReady );
 
-		request.send();*/
+			audio.src = 'assets/acidbeat - xmas infection.mp3';
+
+		}
 
 	} );
 
 	Promise.all( [ geo, a, story ] ).then( function() {
 		startTime = performance.now();
-		//audioSource.start( 0 );
-		audio.play();
+		if( isMobile ) {
+			audioSource.start( 0 );			
+		} else {
+			audio.play();
+		}
 		render();
 	})
 	
@@ -865,7 +883,7 @@ function render() {
 		drawSpectrum( 10 );
 	}
 
-	var t = audio.currentTime;
+	var t = isMobile ? audioContext.currentTime : audio.currentTime;
 	var l = 93;
 	requestAnimationFrame( render );
 
