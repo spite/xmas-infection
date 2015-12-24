@@ -179,7 +179,7 @@ function getParameterByName(name) {
 var isMobile = getParameterByName( 'mobile' ) === 'true' || isMobile.phone;
 var debugMode = getParameterByName( 'debug' ) === 'true';
 var noPost = getParameterByName( 'nopost' ) === 'true';
-var useDOF = getParameterByName( 'dof' ) === 'true';;
+var useDOF = getParameterByName( 'nodof' ) !== 'true';;
 
 function addSpectrumVisualiser() {
 
@@ -234,9 +234,11 @@ var timeLabel = document.getElementById( 'time' );
 var cameraLabel = document.getElementById( 'camera' );
 var container = document.getElementById( 'container' );
 var creditsLabel = document.getElementById( 'credits' );
+creditsLabel.style.opacity = 0;
 var intro = document.getElementById( 'intro' );
 var loading = document.getElementById( 'loading' );
 var ready = document.getElementById( 'ready' );
+var start = document.getElementById( 'start' );
 
 if( debugMode ) {
 	timeLabel.style.display = 'block';
@@ -277,7 +279,7 @@ var fxaaPass = new WAGNER.FXAAPass();
 
 var audio;
 
-//var controls = new THREE.OrbitControls( camera, renderer.domElement );
+var controls;
 
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -958,10 +960,18 @@ window.addEventListener( 'load', function() {
 
 	var a = new Promise( function( resolve, reject ) {
 		
+		var trackName = 'assets/acidbeat - xmas infection';
+
+		if(navigator.userAgent.toLowerCase().indexOf('firefox') > -1) { // gaaaaah
+			trackName += '.ogg';
+		} else {
+			trackName += '.mp3';
+		}
+		
 		if( isMobile ) {
 
 			var request = new XMLHttpRequest();
-			request.open( 'GET', 'assets/acidbeat - xmas infection.mp3', true );
+			request.open( 'GET', trackName, true );
 			request.responseType = 'arraybuffer';
 
 			request.onload = function() {
@@ -1017,7 +1027,7 @@ window.addEventListener( 'load', function() {
 
 			audio.addEventListener( 'canplay', onAudioReady );
 
-			audio.src = 'assets/acidbeat - xmas infection.mp3';
+			audio.src = trackName;
 
 		}
 
@@ -1027,9 +1037,14 @@ window.addEventListener( 'load', function() {
 
 		loading.style.opacity = 0;
 		ready.style.opacity = 1;		
+		start.style.display = 'block';
 
 		function playSound() {
-			window.removeEventListener( 'click', playSound );
+
+			start.removeEventListener( 'click', playSound );
+			start.style.display = 'none';
+
+			controls = new THREE.OrbitControls( camera, renderer.domElement );
 
 			startTime = performance.now();
 			previousTime = startTime;
@@ -1052,7 +1067,7 @@ window.addEventListener( 'load', function() {
 			}, 500 );
 
 		}
-		window.addEventListener( 'click', playSound );
+		start.addEventListener( 'click', playSound );
 	})
 	
 } );
