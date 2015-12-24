@@ -78,9 +78,9 @@ function parseStoryline( story ) {
 				}
 			} );
 
-			storyboard.forEach( function( e, i ) {
+			/*storyboard.forEach( function( e, i ) {
 				console.log( e.from + '(' + e.start + ')' + ' to ' + e.to + '(' + e.end + ') in ' + e.duration );
-			} );
+			} );*/
 
 			s.points[ v ] = storyboard;
 

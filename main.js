@@ -1,5 +1,11 @@
 //'use strict'
 
+console.log( '%cHappy Holidats everyone!', 'color: #ab0000' );
+console.log( '%c@acidbeat %c&& %c@thespite %cfor %cChristmas Experiments 2015', 'color: #ff9000', 'color: #888', 'color: #ff9000', 'color: #888', 'color:#ab0000' );
+console.log( '%chttp://www.christmasexperiments.com', 'color: #ff9000' );
+console.log( '' )
+console.log( '%cPress %ce %cfor interactive mode!', 'color: #888', 'color: #ab0000', 'color: #888')
+console.log( '' )
 WAGNER.vertexShadersPath = 'Wagner/vertex-shaders';
 WAGNER.fragmentShadersPath = 'Wagner/fragment-shaders';
 WAGNER.assetsPath = 'Wagner/assets/';
@@ -136,8 +142,9 @@ function getParameterByName(name) {
     return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
 }
 
-var isMobile = getParameterByName( 'mobile' ) === 'true';
+var isMobile = getParameterByName( 'mobile' ) === 'true' || isMobile.phone;
 var debugMode = getParameterByName( 'debug' ) === 'true';
+var noPost = getParameterByName( 'nopost' ) === 'true';
 
 function addSpectrumVisualiser() {
 
@@ -194,6 +201,7 @@ var container = document.getElementById( 'container' );
 var creditsLabel = document.getElementById( 'credits' );
 var intro = document.getElementById( 'intro' );
 var loading = document.getElementById( 'loading' );
+var ready = document.getElementById( 'ready' );
 
 if( debugMode ) {
 	timeLabel.style.display = 'block';
@@ -207,9 +215,10 @@ camera.position.set( 0 ,0, -10 );//-1, 15, -10 );
 
 var renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true });
 renderer.setSize( window.innerWidth, window.innerHeight );
-var pixelRatio = window.devicePixelRatio * .5;
+var pixelRatio = window.devicePixelRatio;
+renderer.devicePixelRatio = pixelRatio;
 renderer.setPixelRatio( pixelRatio );
-container.appendChild( renderer.domElement );
+document.body.appendChild( renderer.domElement );
 renderer.setClearColor( 0 );
 
 var composer = new WAGNER.Composer( renderer, { useRGBA: false } );
@@ -388,6 +397,20 @@ function loadCenter() {
 
 }
 
+var node     = [ 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0 ]
+var sequence = [ 4, 3, 2, 1, 2, 4, 3, 4, 4, 4, 4, 4, 3, 4, 3, 4 ]
+var outer    = [ 1, 0, 1, 0, 0, 1, 0, 1 ]
+var size     = 1;
+
+/*sequence = []
+node = [];
+for( var j = 0; j < 10; j++ ) {
+	var n = 4 - ( ~~( Math.random() * ( 4 * ( j / 9 ) ) )  );
+	sequence.push( n )
+	node.push( n === 1 ? 1 : 0 )
+}
+*/
+
 function initGeometries() {
 
 	var v = new THREE.Vector3()
@@ -565,7 +588,7 @@ function initGeometries() {
 		}
 	} );
 
-	orbitPositions.sort( function() { return Math.random() > .5 } );
+	orbitPositions.sort( function() { return Math.random() - .5 } );
 
 	var p = 0;
 	cubePositions.forEach( function( v, i ) { 
@@ -659,11 +682,6 @@ function generateArm( base, bothAxis ){
 
 	base.updateMatrixWorld();
 
-	var node     = [ 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0 ]
-	var sequence = [ 4, 3, 2, 1, 2, 4, 3, 4, 4, 4, 4, 4, 3, 4, 3, 4 ]
-	var outer    = [ 1, 0, 1, 0, 0, 1, 0, 1 ]
-	var size = 1;
-
 	/*sequence     = [ 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 4, 4, 3, 3, 2, 2 ]
 	node         = [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
 	outer        = [];*/
@@ -699,6 +717,16 @@ function generateArm( base, bothAxis ){
 
 		if( node[ i ] > 0 ) {
 
+			var branchSequence = [ 2, 4, 3, 4, 4, 4, 4, 4 ];
+			if( node[ i ] === 2 ) branchSequence = [ 3, 5, 4, 5, 5, 5, 5, 5 ];
+
+			/*var branchSequence = [];
+			for( var j = 0; j < 8; j++ ) {
+				var n = 5 - ( ~~( Math.random() * ( 4 * ( j / 7 ) ) )  );
+				branchSequence.push( n )
+				node.push( n === 1 ? 1 : 0 )
+			}*/
+
 			var branchBase = new THREE.Group();
 			branchBase.position.copy( p );
 			var dir = new THREE.Vector3( 1, 0, 1 );
@@ -706,7 +734,7 @@ function generateArm( base, bothAxis ){
 			dir.add( p );
 			branchBase.lookAt( dir );
 			branchBase.rotation.z += Math.PI / 2;
-			generateBranch( branchBase, node[ i ], i + 2 );
+			generateBranch( branchBase, branchSequence, i + 2 );
 
 			var branchBase = new THREE.Group();
 			branchBase.position.copy( p );
@@ -715,7 +743,7 @@ function generateArm( base, bothAxis ){
 			dir.add( p );
 			branchBase.lookAt( dir );
 			branchBase.rotation.z += Math.PI / 2;
-			generateBranch( branchBase, node[ i ], i + 2 );
+			generateBranch( branchBase, branchSequence, i + 2 );
 
 			if( bothAxis ) {
 
@@ -726,7 +754,7 @@ function generateArm( base, bothAxis ){
 				dir.add( p );
 				branchBase.lookAt( dir );
 				branchBase.rotation.z += Math.PI / 2;
-				generateBranch( branchBase, node[ i ], i + 2 );
+				generateBranch( branchBase, branchSequence, i + 2 );
 
 				var branchBase = new THREE.Group();
 				branchBase.position.copy( p );
@@ -735,7 +763,7 @@ function generateArm( base, bothAxis ){
 				dir.add( p );
 				branchBase.lookAt( dir );
 				branchBase.rotation.z += Math.PI / 2;
-				generateBranch( branchBase, node[ i ], i + 2 );
+				generateBranch( branchBase, branchSequence, i + 2 );
 
 			}
 		}
@@ -767,16 +795,15 @@ function generateArm( base, bothAxis ){
 	})
 }
 
-function generateBranch( base, n, tier ){
+function generateBranch( base, sequence, tier ){
 
 	base.updateMatrixWorld();
 
-	var sequence = [ 2, 4, 3, 4, 4, 4, 4, 4 ];
-	if( n === 2 ) sequence = [ 3, 5, 4, 5, 5, 5, 5, 5 ];
+	
 	var size = 1;
 
 	var pos = .8;
-	if( n === 2 ) pos = .4;
+	//if( n === 2 ) pos = .4;
 	sequence.forEach( function( b, i ) {
 		
 		var boxGeometry = boxGeometries[ 'cube0' + b ].geometry;
@@ -822,7 +849,6 @@ var AudioContext = AudioContext || webkitAudioContext;
 
 var audioContext = new AudioContext();
 var startAudioTime = performance.now();
-var offsetAudioTime
 var audioBuffer;
 var audioSource;
 
@@ -836,11 +862,16 @@ var bkg;
 
 window.addEventListener( 'load', function() {
 
-	matCap = THREE.ImageUtils.loadTexture( 'assets/matcap.png' ) ;
+	var img = new Promise( function( resolve, reject ) {
+		var imgLoader = new THREE.TextureLoader();
+		imgLoader.load( 'assets/matcap.png', function( image ) {
+			matCap = image;
+			centerMaterial.uniforms.matCapMap.value = matCap;
+			boxMaterial.uniforms.matCapMap.value = matCap;
+			resolve();
+		} );
+	});
 
-	centerMaterial.uniforms.matCapMap.value = matCap;
-	boxMaterial.uniforms.matCapMap.value = matCap;
-	
 	var mat = new THREE.RawShaderMaterial( {
 		vertexShader: document.getElementById( 'bkg-vs' ).textContent,
 		fragmentShader: document.getElementById( 'bkg-fs' ).textContent,
@@ -912,14 +943,19 @@ window.addEventListener( 'load', function() {
 
 			audio = document.createElement( 'audio' );
 
-			if( debugMode ) {
-				audio.controls = true;
-				audio.style.position = 'absolute';
-				audio.style.width = '100%';
-				audio.style.left = '0';
-				audio.style.bottom = '25px';
-				document.body.appendChild( audio );
-			}
+			audio.controls = true;
+			audio.className = 'player';
+			audio.style.display = 'none';
+			document.body.appendChild( audio );
+
+			var timeout = null;
+			window.addEventListener( 'mousemove', function() {
+				if( timeout ) clearTimeout( timeout );
+				audio.classList.add( 'visible' );
+				timeout = setTimeout( function() {
+					audio.classList.remove( 'visible' );
+				}, 1000 );
+			} );
 
 			function onAudioReady() {
 
@@ -941,35 +977,57 @@ window.addEventListener( 'load', function() {
 
 	} );
 
-	Promise.all( [ geo, a, story ] ).then( function() {
-		startTime = performance.now();
-		previousTime = startTime;
+	Promise.all( [ img, geo, a, story ] ).then( function() {
+
 		loading.style.opacity = 0;
-		intro.style.opacity = 0;
-		if( isMobile ) {
-			function playSound() {
-				window.removeEventListener( 'click', playSound );
-				audioSource.start( 0 );	
-				offsetAudioTime = ( performance.now() - startAudioTime ) / 1000;
-			}
-			window.addEventListener( 'click', playSound );
-		} else {
-			audio.play();
+		ready.style.opacity = 1;		
+
+		function playSound() {
+			window.removeEventListener( 'click', playSound );
+
+			startTime = performance.now();
+			previousTime = startTime;
+			render();
+			render();
+
+			setTimeout( function() {
+				startTime = performance.now();
+				previousTime = startTime;
+				if( isMobile ) {
+					audioSource.start( 0 );	
+				} else {
+					audio.play();
+					audio.style.display = 'block';
+				}
+				ready.style.opacity = 0;		
+				intro.style.opacity = 0;
+				
+				animate();
+			}, 500 );
+
 		}
-		render();
+		window.addEventListener( 'click', playSound );
 	})
 	
 } );
 
 function onWindowResize() {
 
-	var w = container.clientWidth * pixelRatio;
-	var h = container.clientHeight * pixelRatio;
+	var width = 1280;
+	var height = 720;
+
+	var w = window.innerWidth;//width * ( window.innerWidth / width )
+	var h = window.innerHeight;//height * ( window.innerWidth / width )
+
+	renderer.setSize( w, h );
+
+	renderer.domElement.style.position = 'absolute';
+	renderer.domElement.style.left = '0px';
+	renderer.domElement.style.top = ( ( window.innerHeight - ( renderer.domElement.height / renderer.devicePixelRatio ) ) / 2 ) + 'px';
 
 	camera.aspect = w / h;
 	camera.updateProjectionMatrix();
 
-	renderer.setSize( w, h );
 	composer.setSize( w, h );
 
 	bloomPass.width = Maf.nextPowerOfTwo( w / 2 );
@@ -977,11 +1035,16 @@ function onWindowResize() {
 	
 	glowTexture = WAGNER.Pass.prototype.getOfflineTexture( composer.width, composer.height, false );
 
-	renderer.domElement.style.width = renderer.domElement.style.height = '100%';
 }
 
 window.addEventListener( 'resize', onWindowResize );
 
+function animate() {
+
+	requestAnimationFrame( animate );
+	render();
+
+}
 var tmpVector = new THREE.Vector3();
 var ZEROV3 = new THREE.Vector3( 0, 0, 0 );
 var TAUV3 = new THREE.Vector3( TAU, TAU, TAU );
@@ -990,6 +1053,7 @@ var maxFreq = [ 255 ,255 ,255, 255 ,255 ] ;
 var minFreq = [0, 0, 0, 0, 0 ];
 //var freqs = [ [ 0, 10 ], [ 10, 30 ], [ 30, 60 ], [ 60, 100 ], [ 100, 150 ]]
 var freqs = [ [ 60, 100 ], [ 10, 30 ], [ 0, 10 ], [ 100, 150 ], [ 30, 60 ] ]
+
 function render() {
 
 	var speedMultiplier = 1;
@@ -1013,9 +1077,8 @@ function render() {
 		drawSpectrum( 10 );
 	}
 
-	var t = isMobile ? audioContext.currentTime -  0. *offsetAudioTime : audio.currentTime;
+	var t = isMobile ? .001 * ( performance.now() - startTime ) : audio.currentTime;
 	var l = 93;
-	requestAnimationFrame( render );
 
 	if( mode === 1 ) {
 		var cam = storyline.get( 'camera', t );
@@ -1055,40 +1118,42 @@ function render() {
 	})
 	boxMaterial.uniforms.brightness.value = v;
 
-//	renderer.render( scene, camera );
+	if( noPost ) {
+		renderer.render( scene, camera );
+	} else {
+		composer.reset();
 
-	composer.reset();
+		bkg.visible = false;
 
-	bkg.visible = false;
+		boxMaterial.uniforms.drawGlow.value = 1;
+		centerObjects.forEach( function( obj ) {
+			obj.material.uniforms.drawGlow.value = 1;
+		})
 
-	boxMaterial.uniforms.drawGlow.value = 1;
-	centerObjects.forEach( function( obj ) {
-		obj.material.uniforms.drawGlow.value = 1;
-	})
+		composer.render( scene, camera, null, glowTexture );
 
-	composer.render( scene, camera, null, glowTexture );
+		bkg.visible = true;
+		
+		boxMaterial.uniforms.drawGlow.value = 0;
+		centerObjects.forEach( function( obj ) {
+			obj.material.uniforms.drawGlow.value = 0;
+		})
+		
+		composer.render( scene, camera );
+		composer.pass( fxaaPass );
 
-	bkg.visible = true;
-	
-	boxMaterial.uniforms.drawGlow.value = 0;
-	centerObjects.forEach( function( obj ) {
-		obj.material.uniforms.drawGlow.value = 0;
-	})
-	
-	composer.render( scene, camera );
-	composer.pass( fxaaPass );
+		bloomPass.params.useTexture = true;
+		bloomPass.params.glowTexture = glowTexture;
+		composer.pass( vignettePass );
+		composer.pass( bloomPass );
 
-	bloomPass.params.useTexture = true;
-	bloomPass.params.glowTexture = glowTexture;
-	composer.pass( vignettePass );
-	composer.pass( bloomPass );
+		blurPass.params.amount = 4 * blurFactor;
+		if( blurFactor > 0 ) composer.pass( blurPass );
 
-	blurPass.params.amount = 4 * blurFactor;
-	if( blurFactor > 0 ) composer.pass( blurPass );
+		renderer.domElement.style.opacity = storyline.get( 'fade', t );
 
-	container.style.opacity = storyline.get( 'fade', t );
-
-	composer.toScreen();
+		composer.toScreen();
+	}
 
 	previousTime = performance.now();
 

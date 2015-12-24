@@ -2,18 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Christmas Virus</title>
-    <meta property="og:description" content="Christmas Virus">
+    <title>X-Mas Virus</title>
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, width=device-width">
     <link rel="stylesheet" href="main.css">
-    <!--<link href='https://fonts.googleapis.com/css?family=Lato:400,700,700italic,400italic,300,300italic' rel='stylesheet' type='text/css'>-->
+    <link href='https://fonts.googleapis.com/css?family=Sanchez' rel='stylesheet' type='text/css'>
 </head>
 
 </script>
 
 <body>
-    <!--<h1>Christmas Virus</h1>-->
-    <div id="container" ></div>
     <div id="time" ></div>
     <div id="camera" ></div>
     <div id="intro" ></div>
@@ -188,10 +187,8 @@ uniform float total;
 uniform float rotFactor;
 
 varying vec3 vNormal;
-varying float vId;
 varying vec3 vColor;
 varying vec3 vCenter;
-varying float vy;
 varying vec3 vU;
 varying float vDepth;
 
@@ -244,10 +241,7 @@ void main() {
 	float fId = float( id );
 	float u = mod( fId, posDimensions.x ) / posDimensions.x;
 	float v = floor( fId / posDimensions.x ) / posDimensions.y;
-	vy = v;
 	vec2 tUV = vec2( u, v );
-
-	vId = id;
 
 	float step = 1. / total;
 	float f = 0.;
@@ -351,6 +345,7 @@ void main() {
 <script src="libs/OrbitControls.js"></script>
 <script src="libs/OBJLoader.js"></script>
 <script src="libs/Maf.js"></script>
+<script src="libs/isMobile.min.js"></script>
 <script src="Wagner/Wagner.js"></script>
 <script src="Wagner/Wagner.base.js"></script>
 <script src="Wagner/ShaderLoader.js"></script>
