@@ -13,73 +13,107 @@ WAGNER.assetsPath = 'Wagner/assets/';
 // blue magenta yellow, red 
 
 var cameras = [
-	{ 
+	{ // 1
 		position: new THREE.Vector3( -5.1085910095442095, 0.8991819084385648, -16.406258047368837 ),
-		target: new THREE.Vector3( -15.06246564256313, -4.557379786814194, -7.676944281480399 )
+		target: new THREE.Vector3( -15.06246564256313, -4.557379786814194, -7.676944281480399 ),
+		aperture: .02,
+		distance: 1
 	},
-	{
+	{ // 2
 		position: new THREE.Vector3( -15.167371266248754, -1.8611718650298137, -10.02967931717489 ),
-		target: new THREE.Vector3( -3.573946021928795, 5.612636911932957, 3.725769636956985 )
+		target: new THREE.Vector3( -3.573946021928795, 5.612636911932957, 3.725769636956985 ),
+		aperture: .05,
+		distance: .85
 	},
-	{
+	{ // 3
 		position: new THREE.Vector3( 0.09221196535577691, -2.7759342860813163, -5.75362346055509 ),
-		target: new THREE.Vector3( 3.975501070437179, 0.3932562091652414, 0.14128885897680965 )
+		target: new THREE.Vector3( 3.975501070437179, 0.3932562091652414, 0.14128885897680965 ),
+		aperture: .02,
+		distance: 1
 	},
-	{
+	{ // 4
 		position: new THREE.Vector3( -14.852420323291607, 8.370085695604972, 3.1587026734168577 ),
-		target: new THREE.Vector3( -2.2283131701283376, -0.9525103222563635, 5.498442638410712 )
+		target: new THREE.Vector3( -2.2283131701283376, -0.9525103222563635, 5.498442638410712 ),
+		aperture: .02,
+		distance: .8
 	},
-	{
+	{ // 5
 		position: new THREE.Vector3( -13.500463943594722, -8.172478174265688, 0.863289836546083 ),
-		target: new THREE.Vector3( -8.578037361130349, -4.060184219299862, -4.156749814396668 )
+		target: new THREE.Vector3( -8.578037361130349, -4.060184219299862, -4.156749814396668 ),
+		aperture: .02,
+		distance: .9
 	},
-	{
+	{ // 6
 		position: new THREE.Vector3( 1.491019403961463, 0.5315312475731542, 19.087147738650046 ),
-		target: new THREE.Vector3( 8.864851313896068, -3.476338741741605, 7.484640006264783 )
+		target: new THREE.Vector3( 8.864851313896068, -3.476338741741605, 7.484640006264783 ),
+		aperture: .04,
+		distance: .85
 	},
-	{
+	{ // 7
 		position: new THREE.Vector3( -1.2548885556221723, 1.7119310892319355, -2.261982649969243 ),
-		target: new THREE.Vector3( -2.5325661017862533, -4.02667566662882, 2.768884721911386 )
+		target: new THREE.Vector3( -2.5325661017862533, -4.02667566662882, 2.768884721911386 ),
+		aperture: .2,
+		distance: .99
 	},
-	{
+	{ // 8
 		position: new THREE.Vector3( 0.21515024877894529, 3.509129039738008, -0.4450316791854705 ),
-		target: new THREE.Vector3( -0.2657572469182987, -2.3087406037078475, 0.8852739373193121 )
+		target: new THREE.Vector3( -0.2657572469182987, -2.3087406037078475, 0.8852739373193121 ),
+		aperture: .1,
+		distance: .99
 	},
-	{
+	{ // 9
 		position: new THREE.Vector3( 3.980457784533302, 2.4014426237671183, 6.060553134147385 ),
-		target: new THREE.Vector3( 2.967811741081503, 0.34403429393915247, -0.9235450697183524 )
+		target: new THREE.Vector3( 2.967811741081503, 0.34403429393915247, -0.9235450697183524 ),
+		aperture: .2,
+		distance: .95
 	},
-	{
+	{ // 10
 		position: new THREE.Vector3( 4.522856990247529, -1.3381972058748401, -2.1159511492722327 ),
-		target: new THREE.Vector3( 0.9806371240533418, -1.6665919171811383, -1.6731746936860763 )
+		target: new THREE.Vector3( 0.9806371240533418, -1.6665919171811383, -1.6731746936860763 ),
+		aperture: .2,
+		distance: .95
 	},
-	{
+	{ // 11
 		position: new THREE.Vector3( 4.450706388299658, 2.722330271446955, -3.8877328097490507 ),
-		target: new THREE.Vector3( -1.9735821212039102, -0.6674130053714113, -1.7372375488211051 )
+		target: new THREE.Vector3( -1.9735821212039102, -0.6674130053714113, -1.7372375488211051 ),
+		aperture: .2,
+		distance: .95
 	},
-	{
+	{ // 12
 		position: new THREE.Vector3( 2.264974974192415, -5.520940025983964, 2.5929607512373556 ),
-		target: new THREE.Vector3( 0, 0, 0 )
+		target: new THREE.Vector3( 0, 0, 0 ),
+		aperture: .2,
+		distance: .95
 	},
-	{
+	{ // 13
 		position: new THREE.Vector3( -1.3980131199482688, 3.4156016406278926, 11.433739725596356 ),
-		target: new THREE.Vector3( 1.294330289391187, 0.676332538205743, 2.4096386130665954 )
+		target: new THREE.Vector3( 1.294330289391187, 0.676332538205743, 2.4096386130665954 ),
+		aperture: .05,
+		distance: .87
 	},
-	{
+	{ // 14
 		position: new THREE.Vector3( -6.707446606927979, -6.0409830520780545, 6.307732656098224 ),
-		target: new THREE.Vector3( -1.5902181358054397, -1.6868425676574708, -0.8366457321676409 )
+		target: new THREE.Vector3( -1.5902181358054397, -1.6868425676574708, -0.8366457321676409 ),
+		aperture: .05,
+		distance: .9
 	},
-	{
+	{ // 15
 		position: new THREE.Vector3( -1.158299655239825, 10.78599146070582, 10.620884609652753 ),
-		target: new THREE.Vector3( 3.551952120151164, 2.2761756710405887, 2.227966216693934 )
+		target: new THREE.Vector3( 3.551952120151164, 2.2761756710405887, 2.227966216693934 ),
+		aperture: .05,
+		distance: .85
 	},
-	{
+	{ // 16
 		position: new THREE.Vector3( -12.024267787541055, 1.3729790588811832, 12.964160215306094 ),
-		target: new THREE.Vector3( -7.546391586245068, 0.033365926830122336, -1.4800954302995946 )
+		target: new THREE.Vector3( -7.546391586245068, 0.033365926830122336, -1.4800954302995946 ),
+		aperture: .05,
+		distance: .85
 	},
-	{
+	{ // 17	
 		position: new THREE.Vector3( 3.2733439826912134, 1.0778167663370593, 16.49872804350816 ),
-		target: new THREE.Vector3( 0, 0, 0 )
+		target: new THREE.Vector3( 0, 0, 0 ),
+		aperture: 0,
+		distance: 1
 	}
 ]
 
@@ -145,6 +179,7 @@ function getParameterByName(name) {
 var isMobile = getParameterByName( 'mobile' ) === 'true' || isMobile.phone;
 var debugMode = getParameterByName( 'debug' ) === 'true';
 var noPost = getParameterByName( 'nopost' ) === 'true';
+var useDOF = getParameterByName( 'dof' ) === 'true';;
 
 function addSpectrumVisualiser() {
 
@@ -226,6 +261,7 @@ var bloomPass = new WAGNER.MultiPassBloomPass();
 bloomPass.params.blurAmount = 1;
 bloomPass.params.blendMode = 11;
 var DOFPass = new WAGNER.DOFPass();
+DOFPass.params.blurAmount = .3
 DOFPass.params.aperture = .01
 DOFPass.params.focalDistance = .9
 var blendPass = new WAGNER.BlendPass();
@@ -235,6 +271,7 @@ vignettePass.params.boost = 1.5;
 vignettePass.params.reduction = 1;
 var blurPass = new WAGNER.FullBoxBlurPass();
 var glowTexture;
+var depthTexture;
 
 var fxaaPass = new WAGNER.FXAAPass();
 
@@ -255,8 +292,11 @@ var centerMaterial = new THREE.RawShaderMaterial( {
 		colorsMap: { type: 't', value: null },
 		objectColor: { type: 'f', value: 0 },
 		spectrumTexture: { type: 't', value: spectrumTexture },
+		mNear: { type: 'f', value: camera.near },
+		mFar: { type: 'f', value: camera.far },
 		brightness: { type: 'f', value: 0 },
-		drawGlow: { type: 'f', value: 0 }
+		drawGlow: { type: 'f', value: 0 },
+		drawDepth: { type: 'f', value: 0 }
 	},
 	vertexShader: document.getElementById( 'center-vs' ).textContent,
 	fragmentShader: document.getElementById( 'center-fs' ).textContent,
@@ -281,7 +321,8 @@ var boxMaterial = new THREE.RawShaderMaterial( {
 		mNear: { type: 'f', value: camera.near },
 		mFar: { type: 'f', value: camera.far },
 		brightness: { type: 'f', value: 0 },
-		drawGlow: { type: 'f', value: 0 }
+		drawGlow: { type: 'f', value: 0 },
+		drawDepth: { type: 'f', value: 0 }
 	},
 	vertexShader: document.getElementById( 'object-vs' ).textContent,
 	fragmentShader: document.getElementById( 'object-fs' ).textContent
@@ -873,6 +914,11 @@ window.addEventListener( 'load', function() {
 	});
 
 	var mat = new THREE.RawShaderMaterial( {
+		uniforms:{
+			mNear: { type: 'f', value: camera.near },
+			mFar: { type: 'f', value: camera.far },
+			drawDepth: { type: 'f', value: 0 }
+		},
 		vertexShader: document.getElementById( 'bkg-vs' ).textContent,
 		fragmentShader: document.getElementById( 'bkg-fs' ).textContent,
 		side: THREE.BackSide
@@ -1034,6 +1080,7 @@ function onWindowResize() {
 	bloomPass.height = Maf.nextPowerOfTwo( h / 2 )
 	
 	glowTexture = WAGNER.Pass.prototype.getOfflineTexture( composer.width, composer.height, false );
+	depthTexture = WAGNER.Pass.prototype.getOfflineTexture( composer.width, composer.height, false );
 
 }
 
@@ -1085,9 +1132,18 @@ function render() {
 		if( cam === 0 || cam === null ) {
 			camera.position.set( storyline.get( 'cx', t ), storyline.get( 'cy', t ), storyline.get( 'cz', t ) );
 			camera.target.set( storyline.get( 'tx', t ), storyline.get( 'ty', t ), storyline.get( 'tz', t ) );
+			DOFPass.params.aperture = 0;
+			DOFPass.params.focalDistance = 1
 		} else {
-			camera.position.copy( cameras[ cam - 1 ].position );
-			camera.target.copy( cameras[ cam - 1 ].target );
+			var selectedCam =cameras[ cam - 1 ];
+			camera.position.copy( selectedCam.position );
+			camera.target.copy( selectedCam.target );
+			DOFPass.params.aperture = selectedCam.aperture;
+			DOFPass.params.focalDistance = selectedCam.distance;
+			var fd = storyline.get( 'focalDistance', t ) ;
+			if( fd != 0 ) {
+				DOFPass.params.focalDistance = fd;				
+			}
 		}
 		camera.lookAt( camera.target );
 		speedMultiplier = storyline.get( 'speed', t );
@@ -1123,6 +1179,21 @@ function render() {
 	} else {
 		composer.reset();
 
+		if( useDOF ) {
+			boxMaterial.uniforms.drawDepth.value = 1;
+			bkg.material.uniforms.drawDepth.value = 1;
+			centerObjects.forEach( function( obj ) {
+				obj.material.uniforms.drawDepth.value = 1;
+			})
+			composer.render( scene, camera, null, depthTexture );
+		}
+
+		boxMaterial.uniforms.drawDepth.value = 0;
+		bkg.material.uniforms.drawDepth.value = 0;
+		centerObjects.forEach( function( obj ) {
+			obj.material.uniforms.drawDepth.value = 0;
+		})
+
 		bkg.visible = false;
 
 		boxMaterial.uniforms.drawGlow.value = 1;
@@ -1140,6 +1211,12 @@ function render() {
 		})
 		
 		composer.render( scene, camera );
+
+		if( useDOF ) {
+			DOFPass.params.tBias = depthTexture;
+			composer.pass( DOFPass );
+		}
+
 		composer.pass( fxaaPass );
 
 		bloomPass.params.useTexture = true;

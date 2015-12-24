@@ -33,6 +33,14 @@
    "63.87 cut to 1"
 ],
 
+"focalDistance": [
+   "0 cut to 0",
+   "46 cut to .85",
+   "46.45 linear to 1",
+   "48.38 linear to 1",
+   "48.38 cut to 0"
+],
+
  "cx": [
    "0 cut to 0",
    "15.48 cut to 25",
