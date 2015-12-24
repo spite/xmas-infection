@@ -1,5 +1,5 @@
 *{ box-sizing: border-box; margin :0; padding: 0;}
-body{ font-family: Sanchez, sans-serif; background-color: #010c20; color: #fafafa; padding: 20px;}
+body{ font-family: Sanchez, sans-serif; background-color: #010c20; color: #fafafa; padding: 20px }
 canvas{ }
 h1{ font-weight: 300; font-style: italic; font-size: 24px;}
 #time{ position: absolute; left: 0; top: 0; color : #ff00ff; z-index: 10}

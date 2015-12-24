@@ -277,7 +277,7 @@ var fxaaPass = new WAGNER.FXAAPass();
 
 var audio;
 
-var controls = new THREE.OrbitControls( camera, renderer.domElement );
+//var controls = new THREE.OrbitControls( camera, renderer.domElement );
 
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -1148,7 +1148,7 @@ function render() {
 		camera.lookAt( camera.target );
 		speedMultiplier = storyline.get( 'speed', t );
 	} else {
-		controls.update();		
+		//controls.update();		
 	}
 
 	if( debugMode ) {
